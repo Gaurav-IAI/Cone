@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.usstc.usstc_conferenc",
+      "sha256_cert_fingerprints": [
+        "E2:CC:26:3F:88:47:E7:74:E4:2E:E4:88:76:BD:F5:DC:57:6B:87:C9:BD:FF:CD:8C:D8:5F:9C:DB:AC:AE:AD:3F"
+      ]
+    }
+  }
+]

@@ -1,0 +1,785 @@
+{
+  "schemaVersion": 2,
+  "isDemo": true,
+  "notice": "SAMPLE DATA. One fictional participant used for app screenshots and store review. Not an official USSTC registration.",
+  "source": {
+    "workbook": "USSTC 21 Final116 (1).xlsx",
+    "workbookSha256": "6ed30dbf5883fcdeb488654c0712b9a463d521d158d2844d32a35282a198dfde",
+    "sheetsUsed": [
+      "MAIN",
+      "Computer Sciences including Art"
+    ],
+    "note": "Conference title, disciplines, category codes, presentation types and summary totals are copied from the MAIN sheet. The demo participant follows the column structure of the discipline sheets; personal values are fictional. No real participant record is included."
+  },
+  "fieldMap": {
+    "discipline": "Discipline",
+    "category": "CT.",
+    "presentationType": "O/P",
+    "title": "Title of Abstract",
+    "fullName": "Name of Author(S)",
+    "affiliation": "Organizational Affiliation",
+    "email": "Email Address",
+    "registrationFee": "Registration Fee",
+    "workingAs": "Working as",
+    "softCopy": "Soft Copy",
+    "district": "District",
+    "accommodation": "ACCO",
+    "feesReceived": "Fees Received",
+    "mobile": "Mobile",
+    "earlierAwardee": "Earlier Awarded"
+  },
+  "conference": {
+    "name": "21st Uttarakhand State Science & Technology Congress 2026-27",
+    "nameSource": "MAIN!A1",
+    "shortName": "USSTC 2026-27",
+    "notInWorkbook": [
+      "Conference dates",
+      "Venue and halls",
+      "Organiser contact details",
+      "Session schedule",
+      "Meal arrangements"
+    ],
+    "categories": [
+      "I",
+      "II",
+      "III",
+      "IV"
+    ],
+    "categoryNote": "The workbook uses category codes I-IV (column CT.) but does not define what they mean.",
+    "presentationTypes": {
+      "O": "Oral",
+      "P": "Poster"
+    },
+    "totals": {
+      "oral": 189,
+      "poster": 68,
+      "abstracts": 257,
+      "source": "MAIN sheet, TOTAL row"
+    },
+    "disciplines": [
+      {
+        "srNo": 1,
+        "name": "Agriculture Sciences, Botany, Environmental Science and Forestry",
+        "oral": 46,
+        "poster": 19,
+        "abstracts": 65
+      },
+      {
+        "srNo": 2,
+        "name": "Biotechnology, Biochemistry and Micro-Biology",
+        "oral": 24,
+        "poster": 8,
+        "abstracts": 32
+      },
+      {
+        "srNo": 3,
+        "name": "Chemical Sciences",
+        "oral": 24,
+        "poster": 11,
+        "abstracts": 35
+      },
+      {
+        "srNo": 4,
+        "name": "Earth Sciences including Geology, Geo-morphology, Geo-physics, Glaciology, Geography",
+        "oral": 10,
+        "poster": 0,
+        "abstracts": 10
+      },
+      {
+        "srNo": 5,
+        "name": "Engineering Sciences, Material Science and Nano Technology",
+        "oral": 10,
+        "poster": 4,
+        "abstracts": 14
+      },
+      {
+        "srNo": 6,
+        "name": "Home Science, Health and Nutrition",
+        "oral": 8,
+        "poster": 0,
+        "abstracts": 8
+      },
+      {
+        "srNo": 7,
+        "name": "Mathematics and Statistics/ Mathematical Sciences",
+        "oral": 9,
+        "poster": 1,
+        "abstracts": 10
+      },
+      {
+        "srNo": 8,
+        "name": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+        "oral": 7,
+        "poster": 2,
+        "abstracts": 9
+      },
+      {
+        "srNo": 9,
+        "name": "Medical / Pharmaceutical Sciences",
+        "oral": 12,
+        "poster": 7,
+        "abstracts": 19
+      },
+      {
+        "srNo": 10,
+        "name": "Physical Sciences",
+        "oral": 8,
+        "poster": 4,
+        "abstracts": 12
+      },
+      {
+        "srNo": 11,
+        "name": "Rural Sciences and Science & Society (including drudgery reduction leveraging Technologies)",
+        "oral": 10,
+        "poster": 3,
+        "abstracts": 13
+      },
+      {
+        "srNo": 12,
+        "name": "Zoology, Veterinary Science and Animal Husbandry",
+        "oral": 17,
+        "poster": 8,
+        "abstracts": 25
+      },
+      {
+        "srNo": 13,
+        "name": "Innovator of the Year",
+        "oral": 4,
+        "poster": 1,
+        "abstracts": 5
+      }
+    ],
+    "schedule": [
+      {
+        "day": "Day 1",
+        "start": "09:00",
+        "end": "10:00",
+        "title": "Registration and kit collection",
+        "venue": "Registration desk",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "10:00",
+        "end": "11:30",
+        "title": "Inaugural session",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "11:45",
+        "end": "13:00",
+        "title": "Plenary lecture",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "14:00",
+        "end": "17:00",
+        "title": "Technical session: Computer Sciences (Oral)",
+        "venue": "Hall B",
+        "kind": "session",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 2",
+        "start": "10:00",
+        "end": "13:00",
+        "title": "Poster sessions (all disciplines)",
+        "venue": "Exhibition area",
+        "kind": "session",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 2",
+        "start": "15:00",
+        "end": "16:30",
+        "title": "Valedictory session and awards",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      }
+    ]
+  },
+  "people": [
+    {
+      "isDemo": true,
+      "fictionalFields": [
+        "registrationId",
+        "passId",
+        "fullName",
+        "mobile",
+        "affiliation",
+        "feesReceived",
+        "paper.submissionId",
+        "paper.title",
+        "paper.abstractText",
+        "paper.authors",
+        "schedule",
+        "foodCoupons"
+      ],
+      "registrationId": "USSTC26-CSE-0142",
+      "passId": "USSTC26-PASS-0142",
+      "registrationStatus": "Registered",
+      "fullName": "Aarav Mehra",
+      "email": "gauravkumarsony08@gmail.com",
+      "mobile": "9876543210",
+      "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+      "workingAs": "Ph.D Scholar",
+      "district": "DN",
+      "discipline": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+      "disciplineShort": "Computer Sciences",
+      "category": "I",
+      "presentationType": "O",
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004521",
+      "softCopy": "Yes",
+      "accommodation": "No",
+      "earlierAwardee": "No",
+      "paper": {
+        "submissionId": "USSTC26-ABS-0142",
+        "title": "Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+        "abstractText": "Landslides cause recurring loss of life and property in the hill districts of Uttarakhand, particularly during the monsoon. This study presents a low-cost early warning network built from soil-moisture, tilt and rain-gauge sensors connected over LoRaWAN to a cloud dashboard. A pilot of twelve sensor nodes was installed on two slopes with a history of slope failure. A threshold model combining cumulative rainfall and pore-water indicators raised alerts on average 40 minutes before observed slope movement, with a hardware cost below INR 6,000 per node. The results suggest that community-maintained sensor networks can complement regional forecasting and support timely evacuation in remote villages.",
+        "abstractNote": null,
+        "authors": [
+          {
+            "name": "Aarav Mehra",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Presenting author",
+            "isParticipant": true
+          },
+          {
+            "name": "Kavya Joshi",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author",
+            "isParticipant": false
+          },
+          {
+            "name": "Dr. Tanvir Saklani",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author (supervisor)",
+            "isParticipant": false
+          }
+        ],
+        "authorsNote": null
+      },
+      "role": "presenter",
+      "designation": null,
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "14:30",
+          "end": "14:45",
+          "title": "Your oral presentation: Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+          "venue": "Hall B",
+          "kind": "presentation",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-337DATNE",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-QENEDTNY",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-3N668QUN",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-S4W6J9FW",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-R5V64EGB",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-QG44ATVW",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "talk": null,
+      "duties": [],
+      "host": null
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": "DN",
+      "workingAs": "Student",
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004988",
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [],
+      "role": "attendee",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "USSTC26-ATT-0218",
+      "passId": "USSTC26-PASS-0218",
+      "fullName": "Riya Bhandari",
+      "email": "gauravkumarsony08+attendee@gmail.com",
+      "mobile": "9876543211",
+      "affiliation": "Department of Environmental Science, Alakananda Institute of Technology, Dehradun",
+      "designation": "M.Sc. Student",
+      "personalSchedule": [],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-A5QHDCBV",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-3C6F4XWU",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-3QZYWXHL",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-S9YSCPLY",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-6WE3QUB4",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-VTTBA89T",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ]
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": {
+        "title": "Artificial Intelligence for Disaster Resilience in the Himalaya",
+        "session": "Plenary lecture",
+        "day": "Day 1",
+        "start": "11:45",
+        "end": "13:00",
+        "venue": "Main hall",
+        "abstract": "How machine learning on satellite, rainfall and ground-sensor data can give mountain communities earlier warnings of landslides and flash floods, and what it takes to run such systems reliably in remote districts."
+      },
+      "host": null,
+      "duties": [],
+      "role": "speaker",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "USSTC26-SPK-0007",
+      "passId": "USSTC26-PASS-0007",
+      "fullName": "Prof. Nandini Rautela",
+      "email": "gauravkumarsony08+speaker@gmail.com",
+      "mobile": "9876543212",
+      "affiliation": "Centre for Mountain Hazards Research, Alakananda Institute of Technology, Dehradun",
+      "designation": "Plenary speaker",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "11:15",
+          "end": "11:40",
+          "title": "Speaker check-in and slide upload",
+          "venue": "Main hall green room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "11:45",
+          "end": "13:00",
+          "title": "Your plenary lecture: Artificial Intelligence for Disaster Resilience in the Himalaya",
+          "venue": "Main hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-6MP9W4EG",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-SDJDGP8Q",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-VB32F52Z",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-LCU4QVCZ",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-SFZ3WWPK",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-ERMFHUGD",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ]
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": {
+        "name": "Dr. Kavita Negi",
+        "role": "Organising committee",
+        "mobile": "9876543214"
+      },
+      "duties": [],
+      "role": "vip",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "USSTC26-VIP-0003",
+      "passId": "USSTC26-PASS-0003",
+      "fullName": "Dr. Vinod Tamta",
+      "email": "gauravkumarsony08+vip@gmail.com",
+      "mobile": "9876543213",
+      "affiliation": "Retired Scientist, Dehradun",
+      "designation": "Guest of Honour",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "09:45",
+          "end": "10:00",
+          "title": "Arrival and welcome at VIP lounge",
+          "venue": "VIP lounge",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "10:30",
+          "end": "10:45",
+          "title": "Guest of Honour address (Inaugural session)",
+          "venue": "Main hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 2",
+          "start": "15:30",
+          "end": "16:00",
+          "title": "Presentation of awards (Valedictory session)",
+          "venue": "Main hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-LP92U979",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-H3A7AGZB",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-6RB82C5F",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-UMNTQY9T",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-958WNJPF",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-W2J3VRSA",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ]
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Overall coordination",
+        "Host for Guest of Honour",
+        "Meal desk supervision"
+      ],
+      "role": "organiser",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "USSTC26-ORG-0002",
+      "passId": "USSTC26-PASS-0002",
+      "fullName": "Dr. Kavita Negi",
+      "email": "gauravkumarsony08+organiser@gmail.com",
+      "mobile": "9876543214",
+      "affiliation": "Organising Committee, USSTC 2026-27",
+      "designation": "Conference coordinator",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "08:00",
+          "end": "08:45",
+          "title": "Organising committee briefing",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "18:00",
+          "end": "18:30",
+          "title": "Day 1 review meeting",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-MSNR8URQ",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-CT9VZ2BA",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-ML4XZD38",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-JZ6LLSPK",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-6JLCG6QP",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-RLVMYPFC",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ]
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Meal desk — Dining hall",
+        "Registration desk support (Day 1 morning)"
+      ],
+      "role": "volunteer",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "USSTC26-VOL-0015",
+      "passId": "USSTC26-PASS-0015",
+      "fullName": "Rohit Bisht",
+      "email": "gauravkumarsony08+volunteer@gmail.com",
+      "mobile": "9876543215",
+      "affiliation": "Student volunteer",
+      "designation": "Meal desk volunteer",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "07:45",
+          "end": "09:30",
+          "title": "Meal desk duty — Breakfast",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty — Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 2",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty — Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "MEAL-D1-BRK-C3W276UR",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D1-LUN-B37FXAL3",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D1-DIN-4J64D9B3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "MEAL-D2-BRK-DLEHCW65",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "MEAL-D2-LUN-45F85EFW",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "MEAL-D2-DIN-C8WMKME6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ]
+    }
+  ]
+}

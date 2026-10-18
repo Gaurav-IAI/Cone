@@ -1,0 +1,462 @@
+{
+  "files": [
+    {
+      "file": "phone/01-conference-dashboard-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 189030,
+      "feature": "Dashboard — profile, role badge, pass and coupon shortcuts (Presenter)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/02-virtual-pass-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 119422,
+      "feature": "Virtual conference pass with QR code (encodes only the pass ID)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/03-meal-coupons-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 158678,
+      "feature": "Digital meal coupons — breakfast, lunch, dinner, each with its own QR and live status",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/04-conference-schedule-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 166699,
+      "feature": "Conference programme — sessions by day, own presentation highlighted",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/05-personal-profile-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 184398,
+      "feature": "Personal profile — registration details (email blurred for publication)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/06-speaker-experience-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 215185,
+      "feature": "Speaker experience — talk title, session, time, venue and summary",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/07-organiser-dashboard-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 169959,
+      "feature": "Organiser dashboard — registrations per role, meals served, People, Meal desk",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "phone/08-volunteer-meal-desk-phone.png",
+      "category": "phone",
+      "width": 1080,
+      "height": 2160,
+      "format": "PNG",
+      "bytes": 86273,
+      "feature": "Volunteer meal desk — coupon checked and shown Valid with \"Done — mark as served\"",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/01-conference-dashboard-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 182571,
+      "feature": "Dashboard — profile, role badge, pass and coupon shortcuts (Presenter)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/02-virtual-pass-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 116763,
+      "feature": "Virtual conference pass with QR code (encodes only the pass ID)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/03-meal-coupons-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 160357,
+      "feature": "Digital meal coupons — breakfast, lunch, dinner, each with its own QR and live status",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/04-conference-schedule-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 155343,
+      "feature": "Conference programme — sessions by day, own presentation highlighted",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/05-personal-profile-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 173038,
+      "feature": "Personal profile — registration details (email blurred for publication)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/06-speaker-experience-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 204761,
+      "feature": "Speaker experience — talk title, session, time, venue and summary",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/07-organiser-dashboard-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 174254,
+      "feature": "Organiser dashboard — registrations per role, meals served, People, Meal desk",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_7_inch/08-volunteer-meal-desk-tablet7.png",
+      "category": "tablet_7_inch",
+      "width": 1200,
+      "height": 1920,
+      "format": "PNG",
+      "bytes": 87076,
+      "feature": "Volunteer meal desk — coupon checked and shown Valid with \"Done — mark as served\"",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/01-conference-dashboard-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 200396,
+      "feature": "Dashboard — profile, role badge, pass and coupon shortcuts (Presenter)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/02-virtual-pass-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 126825,
+      "feature": "Virtual conference pass with QR code (encodes only the pass ID)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/03-meal-coupons-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 169647,
+      "feature": "Digital meal coupons — breakfast, lunch, dinner, each with its own QR and live status",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/04-conference-schedule-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 165803,
+      "feature": "Conference programme — sessions by day, own presentation highlighted",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/05-personal-profile-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 179319,
+      "feature": "Personal profile — registration details (email blurred for publication)",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/06-speaker-experience-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 224134,
+      "feature": "Speaker experience — talk title, session, time, venue and summary",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/07-organiser-dashboard-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 240021,
+      "feature": "Organiser dashboard — registrations per role, meals served, People, Meal desk",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    },
+    {
+      "file": "tablet_10_inch/08-volunteer-meal-desk-tablet10.png",
+      "category": "tablet_10_inch",
+      "width": 1600,
+      "height": 2560,
+      "format": "PNG",
+      "bytes": 96905,
+      "feature": "Volunteer meal desk — coupon checked and shown Valid with \"Done — mark as served\"",
+      "checks": {
+        "opens": true,
+        "format_png_or_jpeg": true,
+        "under_8mb": true,
+        "dimensions_in_range": true,
+        "aspect_at_most_2_to_1": true,
+        "portrait": true,
+        "unique": true
+      },
+      "status": "PASS"
+    }
+  ],
+  "problems": [],
+  "all_passed": true
+}

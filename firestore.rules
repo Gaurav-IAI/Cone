@@ -1,0 +1,80 @@
+rules_version = '2';
+
+// CONE — Conference Operations & Networking Environment
+//
+//   conference/main             public conference information
+//   people/{email}              one registration per person; role is one of
+//                               presenter, attendee, speaker, vip, organiser,
+//                               volunteer. Written only by the seed tool
+//                               (Admin SDK), never by the app.
+//   couponIndex/{couponId}      coupon -> owner lookup for the meal desk
+//   mealRedemptions/{couponId}  one document = that meal was served. Only
+//                               volunteers/organisers create it; nobody can
+//                               change or delete it, so a coupon works once.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function verifiedEmail() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function myRole() {
+      return get(/databases/$(database)/documents/people/$(myEmail())).data.role;
+    }
+
+    function hasRole(roles) {
+      return verifiedEmail()
+        && exists(/databases/$(database)/documents/people/$(myEmail()))
+        && myRole() in roles;
+    }
+
+    function isStaff() {
+      return hasRole(['volunteer', 'organiser']);
+    }
+
+    function isOrganiser() {
+      return hasRole(['organiser']);
+    }
+
+    match /conference/{doc} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    match /people/{email} {
+      allow get: if verifiedEmail() && (email == myEmail() || isOrganiser());
+      allow list: if isOrganiser();
+      allow write: if false;
+    }
+
+    match /couponIndex/{couponId} {
+      allow get: if isStaff();
+      allow list, write: if false;
+    }
+
+    match /mealRedemptions/{couponId} {
+      // The owner sees their own coupon's status; staff see any. A coupon not
+      // yet served has no document (resource == null) and reads as "valid".
+      allow get: if isStaff()
+        || (verifiedEmail()
+            && (resource == null || resource.data.participantEmail == myEmail()));
+      allow list: if isOrganiser();
+
+      allow create: if isStaff()
+        && request.resource.data.keys().hasOnly([
+          'couponId', 'registrationId', 'participantEmail',
+          'meal', 'day', 'redeemedAt', 'redeemedBy'])
+        && request.resource.data.couponId == couponId
+        && request.resource.data.redeemedBy == myEmail()
+        && request.resource.data.redeemedAt == request.time;
+
+      allow update, delete: if false;
+    }
+  }
+}

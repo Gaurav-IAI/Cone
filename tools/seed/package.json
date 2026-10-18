@@ -1,0 +1,13 @@
+{
+  "name": "cone-seed",
+  "private": true,
+  "type": "module",
+  "description": "Loads CONE sample data into Firebase (Firestore + Auth).",
+  "scripts": {
+    "seed": "node seed.mjs",
+    "dry-run": "node seed.mjs --dry-run"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.4.0"
+  }
+}
