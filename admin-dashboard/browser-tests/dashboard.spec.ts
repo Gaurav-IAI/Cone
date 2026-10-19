@@ -39,8 +39,38 @@ test("signs in, navigates the dashboard, and submits validated participant field
     });
   });
   const rows: Record<string, unknown>[] = [];
+  let branding = {
+    applicationName: "CONE",
+    logoId: null as string | null,
+    logoUrl: null as string | null,
+    version: 0,
+  };
+  const logoPng = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDasAAAAASUVORK5CYII=",
+    "base64",
+  );
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/api/branding")
+      return route.fulfill({ json: branding });
+    if (url.pathname.startsWith("/api/branding/logo/"))
+      return route.fulfill({ contentType: "image/png", body: logoPng });
+    if (url.pathname === "/api/settings/branding") {
+      const body = route.request().postData() || "";
+      expect(body).toContain("Aurora Workspace");
+      expect(body).toContain("branding-logo.png");
+      branding = {
+        applicationName: "Aurora Workspace",
+        logoId: "12345678-1234-4234-8234-123456789abc",
+        logoUrl: "/api/branding/logo/12345678-1234-4234-8234-123456789abc",
+        version: 1,
+      };
+      return route.fulfill({ json: branding });
+    }
+    if (url.pathname === "/api/settings")
+      return route.fulfill({
+        json: { maintenanceMode: false, registrationOpen: false },
+      });
     if (url.pathname === "/api/me")
       return route.fulfill({
         json: {
@@ -68,6 +98,15 @@ test("signs in, navigates the dashboard, and submits validated participant field
             volunteer: 0,
           },
           recentImports: [],
+          recentActivity: [
+            {
+              id: "audit-1",
+              action: "participants.create",
+              actorName: "Test Administrator",
+              target: "participant@example.org",
+              createdAt: "2026-10-19T04:30:00.000Z",
+            },
+          ],
         },
       });
     if (url.pathname === "/api/records/participants") {
@@ -97,11 +136,80 @@ test("signs in, navigates the dashboard, and submits validated participant field
   await expect(
     page.getByText("Total registrations", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Recent activity", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".activity-list")).toContainText(
+    "participants create",
+  );
+  await expect(page.locator(".activity-list")).toContainText(
+    "Test Administrator",
+  );
+  const mainNav = page.getByRole("navigation", { name: "Main navigation" });
+  for (const [name, query] of [
+    ["View total registrations", "excludeDemo=true"],
+    ["View confirmed participants", "status=confirmed"],
+    ["View presenters", "role=presenter"],
+  ]) {
+    const response = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/records/participants?") &&
+        r.url().includes(query),
+    );
+    await page.getByRole("button", { name, exact: true }).click();
+    await response;
+    await expect(
+      page.getByRole("button", { name: "Clear filters" }),
+    ).toBeVisible();
+    await mainNav
+      .getByRole("button", { name: "Overview", exact: true })
+      .click();
+  }
+  for (const role of [
+    "presenter",
+    "attendee",
+    "speaker",
+    "vip",
+    "organizer",
+    "volunteer",
+  ]) {
+    const databaseRole = role === "organizer" ? "organiser" : role;
+    const response = page.waitForResponse((r) =>
+      r.url().includes(`/api/records/participants?role=${databaseRole}`),
+    );
+    await page
+      .getByRole("button", { name: `View ${role} participants`, exact: true })
+      .click();
+    await response;
+    await mainNav
+      .getByRole("button", { name: "Overview", exact: true })
+      .click();
+  }
+  const redemptions = page.waitForResponse((r) =>
+    r.url().includes("/api/redemptions"),
+  );
+  await page
+    .getByRole("button", { name: "View meals served", exact: true })
+    .click();
+  await redemptions;
+  await mainNav.getByRole("button", { name: "Overview", exact: true }).click();
+  await page
+    .locator(".activity-list")
+    .getByRole("button", { name: "Open", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Participants", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await mainNav.getByRole("button", { name: "Overview", exact: true }).click();
   await page.screenshot({
     path: "test-results/dashboard-desktop.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Participants", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Main navigation" })
+    .getByRole("button", { name: "Participants", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Add participant", exact: true })
     .click();
@@ -110,10 +218,52 @@ test("signs in, navigates the dashboard, and submits validated participant field
   await dialog.getByLabel("Email address").fill("participant@example.org");
   await dialog.getByLabel("Mobile number").fill("9876543210");
   await dialog.getByLabel("Affiliation").fill("Example University");
+  await expect(dialog.getByText(/password/i)).toHaveCount(0);
+  const saved = page.waitForRequest(
+    (r) =>
+      r.method() === "POST" && r.url().endsWith("/api/records/participants"),
+  );
   await dialog.getByRole("button", { name: "Save record" }).click();
+  expect((await saved).postDataJSON()).not.toHaveProperty("password");
   await expect(
     page.getByText("Example Participant", { exact: true }),
   ).toBeVisible();
+  await mainNav
+    .getByRole("button", { name: "Application settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "App Branding", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Application name", { exact: true })
+    .fill("Aurora Workspace");
+  await page.getByLabel("Application logo", { exact: true }).setInputFiles({
+    name: "branding-logo.png",
+    mimeType: "image/png",
+    buffer: logoPng,
+  });
+  await expect(
+    page.getByRole("img", { name: "Application logo preview", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Save branding", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Branding saved");
+  await expect(page).toHaveTitle(
+    "Aurora Workspace - Conference administration",
+  );
+  await expect(page.locator(".sidebar .brand")).toContainText(
+    "Aurora Workspace",
+  );
+  await expect(
+    page
+      .locator(".sidebar .brand")
+      .getByRole("img", { name: "Aurora Workspace logo" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".sidebar .brand")).toContainText(
+    "Aurora Workspace",
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Toggle navigation" }).click();
   await expect(

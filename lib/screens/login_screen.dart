@@ -7,6 +7,8 @@ import '../auth/identity_matcher.dart';
 import '../auth/participant_auth_service.dart';
 import '../widgets/common.dart';
 import 'check_email_screen.dart';
+import 'dashboard_screen.dart';
+import 'selfie_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,6 +47,53 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     setState(() => _submitting = true);
     try {
+      // The six bundled demo accounts continue without email; everyone else
+      // receives a one-time code at their registered email address.
+      final demo =
+          auth is DemoAccountLookup &&
+          await (auth as DemoAccountLookup).isDemoAccount(details.email);
+      if (!demo &&
+          auth is EmailOtpAuthentication &&
+          (auth as EmailOtpAuthentication).emailOtpEnabled) {
+        final challenge = await (auth as EmailOtpAuthentication)
+            .requestEmailOtp(details);
+        if (!mounted) return;
+        setState(() => _submitting = false);
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                CheckEmailScreen(details: details, challenge: challenge),
+          ),
+        );
+        return;
+      }
+      if (auth is AutomaticEmailVerification &&
+          (auth as AutomaticEmailVerification)
+              .automaticEmailVerificationEnabled) {
+        final result = await (auth as AutomaticEmailVerification)
+            .continueWithoutVerification(details);
+        if (!mounted) return;
+        if (result is! SignedIn) {
+          throw AuthFailure(
+            result is SignInFailed ? result.message : 'Sign-in failed.',
+          );
+        }
+        final scope = AppScope.of(context);
+        final selfie = await scope.selfies.load(result.person.email);
+        if (!mounted) return;
+        scope.session.signIn(result.person, selfie: selfie);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(
+            builder: (_) => selfie == null
+                ? SelfieScreen(person: result.person)
+                : DashboardScreen(person: result.person),
+          ),
+          (_) => false,
+        );
+        return;
+      }
+      // Original manual email verification is temporarily bypassed above.
+      // Set AUTO_VERIFY_EMAIL=false to restore it.
       await auth.sendSignInLink(details);
     } on AuthFailure catch (e) {
       if (mounted) {
@@ -85,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 4),
                     const Text(
-                      'Participant sign-in',
+                      'Conference sign-in',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
@@ -186,11 +235,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('Continue'),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'We will email you a one-tap sign-in link. For '
-                      'participants, speakers, guests, organisers and '
-                      'volunteers already registered — new registrations are '
-                      'not taken in this app.',
+                    Text(
+                      AppScope.of(context).auth is DemoAccountLookup
+                          ? 'We will email a one-time code to your registered email address.'
+                          : AppScope.of(context).auth
+                                    is EmailOtpAuthentication &&
+                                (AppScope.of(context).auth
+                                        as EmailOtpAuthentication)
+                                    .emailOtpEnabled
+                          ? 'We will email a one-time code to your registered email address. Verify it to sign in.'
+                          : AppScope.of(context).auth is InAppVerification &&
+                                (AppScope.of(context).auth as InAppVerification)
+                                    .testingVerificationEnabled
+                          ? 'Testing mode: Continue signs you in automatically. No email will be sent. Use an existing registration.'
+                          : 'We will email you a one-tap sign-in link. For '
+                                'participants, speakers, guests, organisers and '
+                                'volunteers already registered — new registrations are '
+                                'not taken in this app.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.textMuted,
@@ -227,8 +288,8 @@ class _Header extends StatelessWidget {
             children: [
               const ConeLogo(size: 176),
               const SizedBox(height: 4),
-              const Text(
-                'CONE · $coneFullName',
+              Text(
+                '${appName(context)} \u00b7 $coneFullName',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.tealBright,

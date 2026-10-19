@@ -285,10 +285,10 @@ class _SelfieScreenState extends State<SelfieScreen>
           text: 'Camera permission is needed to take the selfie.',
         );
       case _Phase.blocked:
-        content = const _FrameMessage(
+        content = _FrameMessage(
           icon: Icons.no_photography_outlined,
           text:
-              'Camera access is turned off for CONE. Allow it in system '
+              'Camera access is turned off for ${appName(context)}. Allow it in system '
               'settings, then return to the app.',
         );
       case _Phase.noCamera:

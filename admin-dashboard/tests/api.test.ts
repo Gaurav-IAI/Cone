@@ -38,6 +38,17 @@ describe("API authorization before administrative writes", () => {
     expect((await api.get("/api/health")).status).toBe(200);
     expect(mocks.verify).not.toHaveBeenCalled();
   });
+  it("does not allow a mobile OTP session to bypass dashboard authentication", async () => {
+    mocks.verify.mockResolvedValue({
+      uid: "uid",
+      email_verified: true,
+      login_audience: "mobile",
+    });
+    expect(
+      (await api.get("/api/me").set("Authorization", "Bearer token")).status,
+    ).toBe(403);
+    expect(mocks.doc).not.toHaveBeenCalled();
+  });
   it("requires a bearer token for all administrative data", async () => {
     expect((await api.get("/api/records/participants")).status).toBe(401);
     expect(mocks.doc).not.toHaveBeenCalled();

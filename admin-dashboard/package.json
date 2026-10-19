@@ -13,16 +13,19 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"tsx watch server/index.ts\" \"vite --host 127.0.0.1\"",
+    "dev": "concurrently -k \"tsx watch server/index.ts\" \"tsx server/worker.ts\" \"vite --host 127.0.0.1\"",
     "build": "tsc --noEmit && vite build && tsc -p tsconfig.server.json",
     "start": "node dist-server/server/index.js",
     "test": "vitest run",
     "bootstrap": "tsx server/bootstrap.ts",
+    "setup:admin-test-accounts": "tsx server/setup-admin-test-accounts.ts",
+    "verify:test-accounts": "node ../tools/seed/setup_direct_demo_login.mjs",
     "worker": "tsx server/worker.ts",
     "worker:production": "node dist-server/server/worker.js",
     "analyze": "tsx server/analyze.ts",
-    "test:browser": "playwright test",
-    "format": "prettier --write src server shared tests browser-tests *.ts *.json"
+    "test:browser": "npm run build && playwright test",
+    "format": "prettier --write src server shared tests browser-tests *.ts *.json",
+    "test:otp-emulators": "firebase emulators:exec --only firestore,auth --project demo-cone-otp --config firebase.otp-test.json \"node --import tsx tests/otp-integration.ts\""
   },
   "dependencies": {
     "cors": "^2.8.5",

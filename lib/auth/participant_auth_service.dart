@@ -62,3 +62,39 @@ abstract class AuthService {
 
   Future<void> signOut();
 }
+
+/// Optional testing capability; production email-link authentication stays intact.
+abstract interface class InAppVerification {
+  bool get testingVerificationEnabled;
+  Uri? get testingVerificationLink;
+}
+
+/// Temporary testing bypass. The original email verification flow is retained.
+abstract interface class AutomaticEmailVerification {
+  bool get automaticEmailVerificationEnabled;
+  Future<SignInState> continueWithoutVerification(LoginDetails details);
+}
+
+/// Bundled demo accounts that continue without email; other registrations
+/// sign in with an emailed one-time code.
+abstract interface class DemoAccountLookup {
+  Future<bool> isDemoAccount(String email);
+}
+
+class EmailOtpChallenge {
+  const EmailOtpChallenge(this.id);
+  final String id;
+}
+
+abstract interface class EmailOtpAuthentication {
+  bool get emailOtpEnabled;
+  Future<EmailOtpChallenge> requestEmailOtp(
+    LoginDetails details, {
+    bool resend = false,
+  });
+  Future<SignInState> verifyEmailOtp(
+    LoginDetails details,
+    EmailOtpChallenge challenge,
+    String code,
+  );
+}

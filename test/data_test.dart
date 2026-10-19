@@ -25,15 +25,31 @@ void main() {
     expect(people.map((p) => p.mobile).toSet(), hasLength(6));
   });
 
-  test('all sign-in emails reach the same Gmail inbox via + aliases', () {
-    for (final p in people) {
-      expect(
-        p.email,
-        matches(RegExp(r'^gauravkumarsony08(\+\w+)?@gmail\.com$')),
-      );
-    }
-    expect(repo.byRole(Role.presenter).email, 'gauravkumarsony08@gmail.com');
-  });
+  test(
+    'all six roles use short emails and retain their names and mobile numbers',
+    () {
+      const expected = {
+        Role.presenter: ['presenter@gmail.com', 'Aarav Mehra', '9876543210'],
+        Role.attendee: ['attendee@gmail.com', 'Riya Bhandari', '9876543211'],
+        Role.speaker: [
+          'speaker@gmail.com',
+          'Prof. Nandini Rautela',
+          '9876543212',
+        ],
+        Role.vip: ['vip@gmail.com', 'Dr. Vinod Tamta', '9876543213'],
+        Role.organiser: [
+          'organizer@gmail.com',
+          'Dr. Kavita Negi',
+          '9876543214',
+        ],
+        Role.volunteer: ['volunteer@gmail.com', 'Rohit Bisht', '9876543215'],
+      };
+      for (final entry in expected.entries) {
+        final person = repo.byRole(entry.key);
+        expect([person.email, person.fullName, person.mobile], entry.value);
+      }
+    },
+  );
 
   test('every person has breakfast, lunch and dinner on both days', () {
     final all = <String>{};

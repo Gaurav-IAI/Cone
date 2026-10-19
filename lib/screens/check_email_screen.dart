@@ -1,18 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app/app_scope.dart';
 import '../app/theme.dart';
 import '../auth/participant_auth_service.dart';
 import '../widgets/common.dart';
+import 'dashboard_screen.dart';
+import 'selfie_screen.dart';
 
 /// Shown after a sign-in link has been emailed. Tapping the link in the email
 /// reopens the app, and the root link listener completes sign-in.
 class CheckEmailScreen extends StatefulWidget {
-  const CheckEmailScreen({super.key, required this.details});
+  const CheckEmailScreen({super.key, required this.details, this.challenge});
 
   final LoginDetails details;
+  final EmailOtpChallenge? challenge;
 
   @override
   State<CheckEmailScreen> createState() => _CheckEmailScreenState();
@@ -21,6 +25,8 @@ class CheckEmailScreen extends StatefulWidget {
 class _CheckEmailScreenState extends State<CheckEmailScreen> {
   static const _resendDelay = 60;
 
+  final _code = TextEditingController();
+  EmailOtpChallenge? _challenge;
   Timer? _timer;
   int _wait = _resendDelay;
   bool _sending = false;
@@ -29,12 +35,14 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
   @override
   void initState() {
     super.initState();
+    _challenge = widget.challenge;
     _startCountdown();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _code.dispose();
     super.dispose();
   }
 
@@ -54,10 +62,73 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
       _message = null;
     });
     try {
-      await AppScope.of(context).auth.sendSignInLink(widget.details);
+      final auth = AppScope.of(context).auth;
+      if (_challenge != null) {
+        _challenge = await (auth as EmailOtpAuthentication).requestEmailOtp(
+          widget.details,
+          resend: true,
+        );
+        _code.clear();
+      } else {
+        await auth.sendSignInLink(widget.details);
+      }
       if (!mounted) return;
-      setState(() => _message = 'A new link is on its way.');
+      setState(
+        () => _message = _challenge != null
+            ? 'If eligible, a new code has been sent.'
+            : 'A new verification link is ready.',
+      );
       _startCountdown();
+    } on AuthFailure catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _verify(Uri? link) async {
+    if (_challenge != null && !RegExp(r'^\d{6}$').hasMatch(_code.text)) {
+      setState(() => _message = 'Enter the six-digit code.');
+      return;
+    }
+    setState(() {
+      _sending = true;
+      _message = null;
+    });
+    final scope = AppScope.of(context);
+    try {
+      final result = _challenge != null
+          ? await (scope.auth as EmailOtpAuthentication).verifyEmailOtp(
+              widget.details,
+              _challenge!,
+              _code.text,
+            )
+          : await scope.auth.completeSignIn(link!);
+      if (!mounted) return;
+      if (result is SignedIn) {
+        final selfie = await scope.selfies.load(result.person.email);
+        if (!mounted) return;
+        scope.session.signIn(result.person, selfie: selfie);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Email status: Verified')));
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(
+            builder: (_) => selfie == null
+                ? SelfieScreen(person: result.person)
+                : DashboardScreen(person: result.person),
+          ),
+          (_) => false,
+        );
+      } else {
+        setState(
+          () => _message = result is SignInFailed
+              ? result.message
+              : (_challenge != null
+                    ? 'Request a new code.'
+                    : 'Request a new link.'),
+        );
+      }
     } on AuthFailure catch (e) {
       if (mounted) setState(() => _message = e.message);
     } finally {
@@ -75,8 +146,23 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = AppScope.of(context).auth;
+    final testing =
+        auth is InAppVerification &&
+        (auth as InAppVerification).testingVerificationEnabled;
+    final link = testing
+        ? (auth as InAppVerification).testingVerificationLink
+        : null;
     return Scaffold(
-      appBar: AppBar(title: const Text('Check your email')),
+      appBar: AppBar(
+        title: Text(
+          _challenge != null
+              ? 'Enter email code'
+              : testing
+              ? 'Verify Email'
+              : 'Check your email',
+        ),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -97,8 +183,12 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'We sent you a sign-in link',
+            Text(
+              _challenge != null
+                  ? 'Enter your sign-in code'
+                  : testing
+                  ? 'Verify your email in the app'
+                  : 'We sent you a sign-in link',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -118,23 +208,74 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
               ),
             ),
             const SizedBox(height: 22),
-            const SectionCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _Step(n: 1, text: 'Open the email from CONE on this phone.'),
-                  _Step(n: 2, text: 'Tap the sign-in link.'),
-                  _Step(n: 3, text: 'CONE opens and signs you in.'),
-                ],
+            if (_challenge != null) ...[
+              const Text(
+                'If your details match a registration, a six-digit code will arrive by email. It expires in five minutes.',
               ),
-            ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const Key('emailOtpField'),
+                controller: _code,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                autofillHints: const [AutofillHints.oneTimeCode],
+                decoration: const InputDecoration(labelText: 'Email code'),
+                onSubmitted: (_) {
+                  if (!_sending) _verify(null);
+                },
+              ),
+              FilledButton(
+                key: const Key('verifyEmailOtp'),
+                onPressed: _sending ? null : () => _verify(null),
+                child: Text(_sending ? 'Verifying...' : 'Verify and continue'),
+              ),
+            ],
+            if (testing && _challenge == null) ...[
+              const Text(
+                'Testing mode: no email was sent. Tap Verify Email to continue.',
+              ),
+              const SizedBox(height: 12),
+              if (link != null)
+                SelectableText(
+                  link.toString(),
+                  key: const Key('verificationLink'),
+                ),
+              const SizedBox(height: 16),
+              FilledButton(
+                key: const Key('verifyEmail'),
+                onPressed: _sending || link == null
+                    ? null
+                    : () => _verify(link),
+                child: Text(_sending ? 'Verifying...' : 'Verify Email'),
+              ),
+            ],
+            if (!testing && _challenge == null)
+              SectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Step(
+                      n: 1,
+                      text:
+                          'Open the email from ${appName(context)} on this phone.',
+                    ),
+                    _Step(n: 2, text: 'Tap the sign-in link.'),
+                    _Step(
+                      n: 3,
+                      text: '${appName(context)} opens and signs you in.',
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 14),
-            const Text(
-              'Not there? Check Spam or Promotions. The link expires after a '
-              'short time and works once.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
-            ),
+            if (!testing && _challenge == null)
+              const Text(
+                'Not there? Check Spam or Promotions. The link expires after a '
+                'short time and works once.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+              ),
             if (_message != null) ...[
               const SizedBox(height: 14),
               Text(
@@ -148,7 +289,9 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
               key: const Key('resendLink'),
               onPressed: (_wait > 0 || _sending) ? null : _resend,
               child: Text(
-                _wait > 0 ? 'Resend link in ${_wait}s' : 'Resend link',
+                _challenge != null
+                    ? (_wait > 0 ? 'Resend code in ${_wait}s' : 'Resend code')
+                    : (_wait > 0 ? 'Resend link in ${_wait}s' : 'Resend link'),
               ),
             ),
             const SizedBox(height: 8),

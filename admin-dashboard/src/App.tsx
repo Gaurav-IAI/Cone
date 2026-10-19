@@ -1,4 +1,13 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useBranding, BrandLogo, BrandingEditor } from "./Branding";
+import {
+  useEffect,
+  useState,
+  useRef,
+  lazy,
+  Suspense,
+  type FormEvent,
+  type CSSProperties,
+} from "react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -29,6 +38,8 @@ import {
   Search,
   Plus,
   ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
   LogOut,
   Menu,
   X,
@@ -42,21 +53,41 @@ import {
   Ticket,
 } from "lucide-react";
 import { auth, configured, request } from "./firebase";
-import EmailCenter from "./EmailCenter";
+const EmailCenter = lazy(() => import("./EmailCenter"));
 import PassCenter from "./PassCenter";
 import ConferenceEditor from "./ConferenceEditor";
 import InviteUser from "./InviteUser";
-import ImportCenter from "./ImportCenter";
+const ImportCenter = lazy(() => import("./ImportCenter"));
 import MfaEnrollment from "./MfaEnrollment";
+import SearchBox, { matchesSearch, NoMatches } from "./SearchBox";
+import RoleWorkspace, {
+  roleDesign,
+  sectionGroups,
+  pageDescriptions,
+  permittedShortcuts,
+} from "./RoleWorkspace";
+const ParticipantWorkspace = lazy(() => import("./ParticipantWorkspace"));
+const ControlCenter = lazy(() => import("./ControlCenter"));
 import {
   can,
   conferenceRoles,
   accessRoles,
   type Actor,
+  type AccessRole,
   type Module,
 } from "../shared/schema";
+const DevRoleLogins =
+  import.meta.env.DEV &&
+  import.meta.env.VITE_ENABLE_DASHBOARD_ROLE_LOGIN === "true"
+    ? lazy(() => import("./DevRoleLogins"))
+    : null;
 
 type Row = Record<string, unknown> & { id: string };
+type ParticipantFilter = {
+  role?: string;
+  status?: string;
+  excludeDemo?: boolean;
+};
 type Field = {
   key: string;
   label: string;
@@ -201,6 +232,13 @@ const navigation = [
     icon: LayoutDashboard,
     permission: "reports",
   },
+  { label: "My account", key: "profile", icon: Users, permission: "self" },
+  {
+    label: "Control Center",
+    key: "control",
+    icon: ShieldCheck,
+    permission: "control",
+  },
   {
     label: "Participants",
     key: "participants",
@@ -318,35 +356,171 @@ function Empty({
   );
 }
 export default function App() {
+  const { branding } = useBranding();
   const [actor, setActor] = useState<Actor | null>(null),
     [checking, setChecking] = useState(true),
     [error, setError] = useState(""),
     [page, setPage] = useState("overview"),
     [mobile, setMobile] = useState(false),
     [revision, setRevision] = useState(0);
+  const [participantFilter, setParticipantFilter] = useState<ParticipantFilter>(
+    {},
+  );
+  const [navSearch, setNavSearch] = useState("");
+  // Each page change is a browser history entry, so the toolbar arrows and the
+  // browser's own Back/Forward move between dashboard pages.
+  const [history, setHistory] = useState({ index: 0, last: 0 });
+  function go(next: string) {
+    if (next === page) return;
+    const index = history.index + 1;
+    window.history.pushState({ conePage: next, index }, "");
+    setHistory({ index, last: index });
+    setPage(next);
+  }
+  function landOn(next: string) {
+    const index = Number(window.history.state?.index) || 0;
+    window.history.replaceState({ conePage: next, index }, "");
+    setHistory((h) => ({ index, last: Math.max(h.last, index) }));
+    setPage(next);
+  }
+  useEffect(() => {
+    const onPop = (event: PopStateEvent) => {
+      const state = event.state as { conePage?: string; index?: number } | null;
+      if (!state?.conePage) return;
+      setPage(state.conePage);
+      setHistory((h) => ({ ...h, index: state.index ?? 0 }));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  const [compact, setCompact] = useState(
+    () => window.matchMedia("(max-width:980px)").matches,
+  );
+  const sidebarRef = useRef<HTMLElement>(null);
+  const landedUid = useRef<string | null>(null);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width:980px)");
+    const update = () => {
+      setCompact(query.matches);
+      if (!query.matches) setMobile(false);
+    };
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [page]);
+  useEffect(() => {
+    if (!mobile) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const toggle = document.querySelector<HTMLButtonElement>(
+      '[aria-label="Toggle navigation"]',
+    );
+    const focusable = () =>
+      Array.from(
+        sidebarRef.current?.querySelectorAll<HTMLElement>(
+          "a[href],button:not([disabled]),input",
+        ) || [],
+      ).filter((el) => el.offsetParent !== null);
+    focusable()[0]?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobile(false);
+      if (event.key === "Tab") {
+        const elements = focusable();
+        const first = elements[0],
+          last = elements.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+      toggle?.focus();
+    };
+  }, [mobile]);
+  const [workspace, setWorkspace] = useState({
+    applicationName: "CONE",
+    announcement: "",
+  });
+  useEffect(() => {
+    if (!actor) return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const [me, settings] = await Promise.all([
+          request<Actor>("/me"),
+          request<typeof workspace>("/workspace-settings"),
+        ]);
+        if (!active) return;
+        setActor(me);
+        if (settings.applicationName) setWorkspace(settings);
+        const entry = navigation.find((n) => n.key === page);
+        if (entry && !can(me, entry.permission))
+          landOn(
+            navigation.find((n) => can(me, n.permission))?.key || "profile",
+          );
+      } catch {
+        /* A protected page still reports API errors through its existing UI. */
+      }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 60000);
+    const focus = () => void refresh();
+    window.addEventListener("focus", focus);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, [actor?.uid, page]);
   useEffect(() => {
     if (!auth) {
       setChecking(false);
       return;
     }
-    return onAuthStateChanged(auth, async (user) => {
-      setChecking(true);
+    // Results from a superseded listener (the retry after sign-in, or a
+    // development re-run) are ignored, and only a newly signed-in user is sent
+    // to their home page, so a page opened meanwhile is never replaced.
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!(user && user.uid === landedUid.current)) setChecking(true);
       setError("");
       try {
         if (user) {
           const me = await request<Actor>("/me");
+          if (!active) return;
           setActor(me);
-          setPage(
-            navigation.find((n) => can(me, n.permission))?.key || "profile",
-          );
-        } else setActor(null);
+          if (landedUid.current !== user.uid) {
+            landedUid.current = user.uid;
+            landOn(
+              navigation.find((n) => can(me, n.permission))?.key || "profile",
+            );
+          }
+        } else {
+          landedUid.current = null;
+          setActor(null);
+        }
       } catch (e) {
+        if (!active) return;
+        landedUid.current = null;
         setActor(null);
         setError((e as Error).message);
       } finally {
-        setChecking(false);
+        if (active) setChecking(false);
       }
     });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [revision]);
   if (checking)
     return (
@@ -357,17 +531,60 @@ export default function App() {
   if (!actor)
     return <Login error={error} retry={() => setRevision((r) => r + 1)} />;
   const current = navigation.find((n) => n.key === page);
+  const design = roleDesign(actor.role);
+  const allowedNavigation = navigation.filter((n) => can(actor, n.permission));
+  const homePage = allowedNavigation[0]?.key || "profile";
+  const groups = sectionGroups
+    .map((group) => ({
+      ...group,
+      items: group.pages
+        .map((key) => allowedNavigation.find((n) => n.key === key))
+        .filter(
+          (n): n is (typeof navigation)[number] =>
+            !!n && n.label.toLowerCase().includes(navSearch.toLowerCase()),
+        ),
+    }))
+    .filter((group) => group.items.length);
   return (
-    <div className="shell">
-      <aside className={mobile ? "sidebar open" : "sidebar"}>
+    <div
+      className="shell"
+      data-role={actor.role}
+      style={
+        {
+          "--role-accent": design.accent,
+          "--role-soft": design.soft,
+        } as CSSProperties
+      }
+    >
+      <a className="skip-link" href="#dashboard-content">
+        Skip to content
+      </a>
+      {mobile && (
+        <button
+          className="navigation-backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobile(false)}
+        />
+      )}
+      <aside
+        id="dashboard-navigation"
+        ref={sidebarRef}
+        inert={compact && !mobile}
+        className={mobile ? "sidebar open" : "sidebar"}
+      >
         <a
           className="brand"
-          href="#overview"
-          onClick={() => setPage("overview")}
+          href="#workspace"
+          onClick={(event) => {
+            event.preventDefault();
+            go(homePage);
+            setMobile(false);
+          }}
         >
-          <span className="brand-icon">C</span>
+          <BrandLogo />
           <span>
-            CONE<small>CONFERENCE OPERATIONS</small>
+            {branding.applicationName}
+            <small>CONFERENCE OPERATIONS</small>
           </span>
         </a>
         <div className="workspace">
@@ -378,24 +595,51 @@ export default function App() {
           </div>
           <ChevronRight size={16} />
         </div>
-        <p className="nav-caption">WORKSPACE</p>
-        <nav>
-          {navigation
-            .filter((n) => can(actor, n.permission))
-            .map((n) => (
-              <button
-                key={n.key}
-                className={page === n.key ? "nav-item active" : "nav-item"}
-                onClick={() => {
-                  setPage(n.key);
-                  setMobile(false);
-                }}
-              >
-                <n.icon size={18} />
-                {n.label}
-                {page === n.key && <span className="nav-dot" />}
-              </button>
-            ))}
+        <div className="nav-search">
+          <Search size={16} />
+          <input
+            aria-label="Find a feature"
+            placeholder="Find a feature…"
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+          />
+          {navSearch && (
+            <button
+              className="icon-button"
+              aria-label="Clear navigation search"
+              onClick={() => setNavSearch("")}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <nav aria-label="Main navigation">
+          {groups.map((group) => (
+            <div className="nav-group" key={group.title}>
+              <p className="nav-caption">{group.title}</p>
+              {group.items.map((n) => (
+                <button
+                  key={n.key}
+                  className={page === n.key ? "nav-item active" : "nav-item"}
+                  aria-current={page === n.key ? "page" : undefined}
+                  onClick={() => {
+                    go(n.key);
+                    setMobile(false);
+                    setNavSearch("");
+                  }}
+                >
+                  <n.icon size={18} />
+                  {n.label}
+                  {page === n.key && <span className="nav-dot" />}
+                </button>
+              ))}
+            </div>
+          ))}
+          {!groups.length && (
+            <p className="nav-empty">
+              No matching features. Try a different name.
+            </p>
+          )}
         </nav>
         <div className="sidebar-footer">
           <div className="secure-label">
@@ -422,27 +666,58 @@ export default function App() {
             className="icon-button mobile-toggle"
             onClick={() => setMobile(!mobile)}
             aria-label="Toggle navigation"
+            aria-expanded={mobile}
+            aria-controls="dashboard-navigation"
           >
             <Menu size={22} />
           </button>
+          <div className="history-nav">
+            <button
+              className="icon-button"
+              aria-label="Go back"
+              title="Back"
+              disabled={history.index <= 0}
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft size={17} />
+            </button>
+            <button
+              className="icon-button"
+              aria-label="Go forward"
+              title="Forward"
+              disabled={history.index >= history.last}
+              onClick={() => window.history.forward()}
+            >
+              <ArrowRight size={17} />
+            </button>
+          </div>
           <span className="breadcrumb">
-            Workspace <ChevronRight size={14} />{" "}
+            <BrandLogo className="header-brand-logo" />
+            <span className="header-app-name">
+              {branding.applicationName}
+            </span>{" "}
+            <ChevronRight size={14} />{" "}
             <strong>{current?.label || "My account"}</strong>
           </span>
           <div className="topbar-right">
-            <span className="live-dot" /> Firebase connected
+            <span className="workspace-role-pill">
+              <ShieldCheck size={14} />
+              {design.label}
+            </span>
+            <span className="connection-status">
+              <span className="live-dot" /> Signed in securely
+            </span>
             <span className="top-avatar">{actor.fullName.slice(0, 1)}</span>
           </div>
         </header>
-        <main className="content">
+        <main id="dashboard-content" className="content" tabIndex={-1}>
           <div className="page-heading">
             <div>
-              <p className="eyebrow">CONE ADMINISTRATION</p>
+              <p className="eyebrow">{design.label} WORKSPACE</p>
               <h1>{current?.label || "My account"}</h1>
               <p className="subtitle">
-                {page === "overview"
-                  ? "Your conference, at a glance. Keep every detail moving."
-                  : "Manage your conference with confidence."}
+                {pageDescriptions[page] ||
+                  "Your conference workspace, organized around your responsibilities."}
               </p>
             </div>
             <span className="date-chip">
@@ -454,41 +729,71 @@ export default function App() {
               })}
             </span>
           </div>
+          {workspace.announcement && (
+            <div className="workspace-announcement" role="status">
+              {workspace.announcement}
+            </div>
+          )}
           <div key={page}>
-            {page === "overview" ? (
-              <Overview navigate={setPage} />
-            ) : page in fields ? (
-              <Records module={page as Module} />
-            ) : page === "imports" ? (
-              <ImportCenter />
-            ) : page === "media" ? (
-              <Media />
-            ) : page === "email" ? (
-              <EmailCenter isSuperAdmin={actor.role === "superadmin"}>
-                <Email />
-              </EmailCenter>
-            ) : page === "conference" ? (
-              <ConferenceEditor />
-            ) : page === "passes" ? (
-              <PassCenter />
-            ) : page === "settings" ? (
-              <SettingsPage />
-            ) : page === "analysis" ? (
-              <Analysis />
-            ) : page === "redemptions" ? (
-              <Redemptions />
-            ) : page === "audit" ? (
-              <LogTable endpoint="audit" />
-            ) : (
-              <div className="panel">
-                <h2>{actor.fullName}</h2>
-                <p>{actor.email}</p>
-                <p>Participant records are available in the CONE mobile app.</p>
-              </div>
+            {page !== "overview" && page === homePage && (
+              <RoleWorkspace
+                actor={actor}
+                navigate={go}
+                links={navigation}
+                page={page}
+              />
             )}
+            <div className="module-area">
+              <Suspense fallback={<Loading />}>
+                {page === "control" ? (
+                  <Suspense fallback={<Loading />}>
+                    <ControlCenter navigate={go} />
+                  </Suspense>
+                ) : page === "overview" ? (
+                  <Overview
+                    actor={actor}
+                    navigate={go}
+                    openParticipants={(filter) => {
+                      setParticipantFilter(filter);
+                      go("participants");
+                    }}
+                  />
+                ) : page in fields ? (
+                  <Records
+                    module={page as Module}
+                    actor={actor}
+                    participantFilter={participantFilter}
+                    clearFilter={() => setParticipantFilter({})}
+                  />
+                ) : page === "imports" ? (
+                  <ImportCenter />
+                ) : page === "media" ? (
+                  <Media />
+                ) : page === "email" ? (
+                  <EmailCenter isSuperAdmin={actor.role === "superadmin"}>
+                    <Email />
+                  </EmailCenter>
+                ) : page === "conference" ? (
+                  <ConferenceEditor />
+                ) : page === "passes" ? (
+                  <PassCenter />
+                ) : page === "settings" ? (
+                  <SettingsPage />
+                ) : page === "analysis" ? (
+                  <Analysis />
+                ) : page === "redemptions" ? (
+                  <Redemptions />
+                ) : page === "audit" ? (
+                  <LogTable endpoint="audit" />
+                ) : (
+                  <ParticipantWorkspace actor={actor} />
+                )}
+              </Suspense>
+            </div>
           </div>
           <footer className="page-footer">
-            CONE · Conference Operations & Networking Environment
+            {branding.applicationName} · Conference Operations & Networking
+            Environment
             <span>USSTC · Administrative workspace</span>
           </footer>
         </main>
@@ -503,11 +808,51 @@ function Login({
   error: string;
   retry: () => void;
 }) {
+  const { branding } = useBranding();
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [note, setNote] = useState(""),
     [resolver, setResolver] = useState<MultiFactorResolver | null>(null),
     [verification, setVerification] = useState("");
+  async function loginAsRole(role: AccessRole) {
+    if (!auth || busy) return;
+    setBusy(true);
+    setError("");
+    setNote("");
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "/api"}/dev/role-login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ role }),
+        },
+      );
+      const credentials = (await response.json()) as {
+        email: string;
+        password: string;
+        error?: string;
+      };
+      if (!response.ok)
+        throw new Error(
+          credentials.error ||
+            "One-click login is unavailable. Check the development flags and restart the API.",
+        );
+      setResolver(null);
+      setVerification("");
+      await signInWithEmailAndPassword(
+        auth,
+        credentials.email,
+        credentials.password,
+      );
+      retry();
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!auth) return;
@@ -556,7 +901,7 @@ function Login({
   return (
     <div className="login-screen">
       <div className="login-art">
-        <span className="brand-icon">C</span>
+        <BrandLogo />
         <p className="eyebrow">CONFERENCE OPERATIONS & NETWORKING</p>
         <h1>
           A thoughtful space
@@ -566,7 +911,7 @@ function Login({
         <p>
           People. Programme. Possibilities.
           <br />
-          Bring your conference together with CONE.
+          Bring your conference together with {branding.applicationName}.
         </p>
         <div className="orbit orbit-one" />
         <div className="orbit orbit-two" />
@@ -645,6 +990,11 @@ function Login({
         </button>
         {note && <p className="success">{note}</p>}
         <div id="recaptcha" />
+        {DevRoleLogins && (
+          <Suspense fallback={null}>
+            <DevRoleLogins busy={busy || !configured} onLogin={loginAsRole} />
+          </Suspense>
+        )}
         <p className="login-hint">
           Access is assigned by your Super Admin. Your mobile app sign-in
           remains unchanged.
@@ -653,7 +1003,15 @@ function Login({
     </div>
   );
 }
-function Overview({ navigate }: { navigate: (p: string) => void }) {
+function Overview({
+  navigate,
+  actor,
+  openParticipants,
+}: {
+  navigate: (p: string) => void;
+  actor: Actor;
+  openParticipants: (filter: ParticipantFilter) => void;
+}) {
   const [data, setData] = useState<Record<string, unknown> | null>(null),
     [error, setError] = useState("");
   useEffect(() => {
@@ -670,6 +1028,8 @@ function Overview({ navigate }: { navigate: (p: string) => void }) {
       icon: Users,
       color: "green",
       note: "Excludes demo records",
+      target: "participants",
+      filter: {},
     },
     {
       label: "Confirmed participants",
@@ -677,6 +1037,8 @@ function Overview({ navigate }: { navigate: (p: string) => void }) {
       icon: CheckCircle2,
       color: "blue",
       note: "Ready for the conference",
+      target: "participants",
+      filter: { status: "confirmed" },
     },
     {
       label: "Presenters",
@@ -684,6 +1046,8 @@ function Overview({ navigate }: { navigate: (p: string) => void }) {
       icon: GraduationCap,
       color: "purple",
       note: "Scientific contributions",
+      target: "participants",
+      filter: { role: "presenter" },
     },
     {
       label: "Meals served",
@@ -691,49 +1055,40 @@ function Overview({ navigate }: { navigate: (p: string) => void }) {
       icon: Utensils,
       color: "orange",
       note: "Recorded redemptions",
+      target: can(actor, "redemptions", "read") ? "redemptions" : "meals",
+      filter: {},
     },
   ];
   const roles = data.byRole as Record<string, number>;
   const max = Math.max(1, ...Object.values(roles));
   return (
     <>
-      <div className="welcome-banner">
-        <div>
-          <span className="tag light">YOUR CONFERENCE COMMAND CENTRE</span>
-          <h2>
-            Good things happen
-            <br />
-            when everything connects.
-          </h2>
-          <p>Keep your people informed and your operations in sync.</p>
-          <button
-            className="banner-button"
-            onClick={() => navigate("participants")}
-          >
-            Manage participants <ArrowUpRight size={16} />
-          </button>
-        </div>
-        <div className="banner-graphic">
-          <div className="graphic-circle">
-            <GraduationCap size={54} />
-          </div>
-          <span className="graphic-label">
-            USSTC <strong>21</strong>
-          </span>
-        </div>
-      </div>
+      <RoleWorkspace actor={actor} navigate={navigate} links={navigation} />
       <div className="metrics">
         {metrics.map((m) => (
-          <div className="metric" key={m.label}>
-            <div className="metric-top">
-              <span>{m.label}</span>
-              <span className={`metric-icon ${m.color}`}>
-                <m.icon size={19} />
-              </span>
+          <button
+            type="button"
+            className="metric overview-link"
+            key={m.label}
+            disabled={!can(actor, m.target, "read")}
+            onClick={() =>
+              m.target === "participants"
+                ? openParticipants({ ...m.filter, excludeDemo: true })
+                : navigate(m.target)
+            }
+            aria-label={`View ${m.label.toLowerCase()}`}
+          >
+            <div className="metric-copy">
+              <div className="metric-top">
+                <span className={`metric-icon ${m.color}`}>
+                  <m.icon size={19} />
+                </span>
+                <span>{m.label}</span>
+              </div>
+              <small>{m.note}</small>
             </div>
             <strong>{label(m.value)}</strong>
-            <small>{m.note}</small>
-          </div>
+          </button>
         ))}
       </div>
       <div className="overview-grid">
@@ -747,78 +1102,168 @@ function Overview({ navigate }: { navigate: (p: string) => void }) {
           </div>
           <div className="bars">
             {Object.entries(roles).map(([role, count]) => (
-              <div className="bar-row" key={role}>
+              <button
+                type="button"
+                className="bar-row overview-link"
+                key={role}
+                disabled={!can(actor, "participants", "read")}
+                onClick={() => openParticipants({ role, excludeDemo: true })}
+                aria-label={`View ${role === "organiser" ? "organizer" : role} participants`}
+              >
                 <span>{role === "organiser" ? "Organizer" : role}</span>
                 <div className="bar-track">
                   <div style={{ width: `${(count / max) * 100}%` }} />
                 </div>
                 <strong>{count}</strong>
-              </div>
+              </button>
             ))}
           </div>
         </section>
         <section className="panel">
           <div className="panel-heading">
             <div>
-              <h2>Make your next move</h2>
-              <p>A few things you can take care of today</p>
+              <h2>Your next steps</h2>
+              <p>Shortcuts for your responsibilities</p>
             </div>
           </div>
-          {[
-            {
-              title: "Bring your participants in",
-              text: "Validate and import an Excel workbook.",
-              icon: FileSpreadsheet,
-              page: "imports",
-            },
-            {
-              title: "Shape the programme",
-              text: "Organize sessions and presentation times.",
-              icon: CalendarDays,
-              page: "sessions",
-            },
-            {
-              title: "Keep everyone connected",
-              text: "Check your email delivery setup.",
-              icon: Mail,
-              page: "email",
-            },
-          ].map((i) => (
-            <button
-              className="quick-action"
-              key={i.page}
-              onClick={() => navigate(i.page)}
-            >
-              <span className="quick-icon">
-                <i.icon size={20} />
-              </span>
-              <span>
-                <strong>{i.title}</strong>
-                <small>{i.text}</small>
-              </span>
-              <ChevronRight size={18} />
-            </button>
-          ))}
+          {permittedShortcuts(actor, navigation).map((link) => {
+            const Icon =
+              navigation.find((item) => item.key === link.key)?.icon || Layers;
+            return (
+              <button
+                className="quick-action"
+                key={link.key}
+                onClick={() => navigate(link.key)}
+              >
+                <span className="quick-icon">
+                  <Icon size={20} />
+                </span>
+                <span>
+                  <strong>{link.label}</strong>
+                  <small>{pageDescriptions[link.key]}</small>
+                </span>
+                <ChevronRight size={18} />
+              </button>
+            );
+          })}
         </section>
       </div>
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <h2>Recent import activity</h2>
-            <p>Your latest participant data updates</p>
+            <h2>Recent activity</h2>
+            <p>
+              {can(actor, "audit", "read")
+                ? "Latest recorded changes, newest first"
+                : "Latest participant imports, newest first"}
+            </p>
           </div>
-          <button className="text-button" onClick={() => navigate("imports")}>
-            View imports <ArrowUpRight size={15} />
+          <button
+            className="text-button"
+            disabled={
+              !can(
+                actor,
+                can(actor, "audit", "read") ? "audit" : "imports",
+                "read",
+              )
+            }
+            onClick={() =>
+              navigate(can(actor, "audit", "read") ? "audit" : "imports")
+            }
+          >
+            View {can(actor, "audit", "read") ? "audit log" : "imports"}{" "}
+            <ArrowUpRight size={15} />
           </button>
         </div>
-        {(data.recentImports as Row[]).length ? (
+        {can(actor, "audit", "read") ? (
+          ((data.recentActivity as Row[]) || []).length ? (
+            <ol className="activity-list">
+              {(data.recentActivity as Row[]).map((item) => {
+                const action = String(item.action || "System update");
+                const resource = action.split(".")[0];
+                const destination = (
+                  {
+                    user: "users",
+                    participants: "participants",
+                    sessions: "sessions",
+                    submissions: "submissions",
+                    import: "imports",
+                    imports: "imports",
+                    email: "email",
+                    smtp: "email",
+                    role: "control",
+                    runtime: "control",
+                    conference: "conference",
+                    media: "media",
+                    coupons: "meals",
+                    fees: "fees",
+                    passes: "passes",
+                    redemptions: "redemptions",
+                  } as Record<string, string>
+                )[resource];
+                const permitted =
+                  destination && can(actor, destination, "read");
+                const date = new Date(String(item.createdAt));
+                return (
+                  <li key={item.id}>
+                    <span className="activity-mark">
+                      <CheckCircle2 size={18} />
+                    </span>
+                    <div className="activity-detail">
+                      <strong>{action.replace(/[._]/g, " ")}</strong>
+                      <span>
+                        {String(item.actorName || "System")} ?{" "}
+                        {String(item.target || "Application")}
+                      </span>
+                      <time
+                        dateTime={
+                          Number.isNaN(date.getTime())
+                            ? undefined
+                            : date.toISOString()
+                        }
+                      >
+                        {Number.isNaN(date.getTime())
+                          ? "Time unavailable"
+                          : date.toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                        IST
+                      </time>
+                    </div>
+                    {permitted && (
+                      <button
+                        className="text-button"
+                        onClick={() =>
+                          destination === "participants"
+                            ? openParticipants({ excludeDemo: true })
+                            : navigate(destination)
+                        }
+                      >
+                        Open <ChevronRight size={15} />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <Empty
+              title="No activity yet"
+              description="Recorded administrative changes will appear here."
+            />
+          )
+        ) : ((data.recentImports as Row[]) || []).length ? (
           <Table
             rows={data.recentImports as Row[]}
             columns={["fileName", "status", "total", "createdAt"]}
           />
         ) : (
           <Empty
-            title="A fresh start"
+            title="No activity yet"
             description="Your workbook imports will appear here once you upload them."
           />
         )}
@@ -830,10 +1275,18 @@ function Table({
   rows,
   columns,
   onEdit,
+  onDelete,
+  deleting,
+  deleteBlocked,
+  ownUid,
 }: {
   rows: Row[];
   columns: string[];
   onEdit?: (r: Row) => void;
+  onDelete?: (r: Row) => void;
+  deleting?: string;
+  deleteBlocked?: string;
+  ownUid?: string;
 }) {
   return (
     <div className="table-wrap">
@@ -843,7 +1296,7 @@ function Table({
             {columns.map((c) => (
               <th key={c}>{c.replace(/([A-Z])/g, " $1")}</th>
             ))}
-            {onEdit && (
+            {(onEdit || onDelete) && (
               <th>
                 <span className="sr-only">Actions</span>
               </th>
@@ -877,11 +1330,44 @@ function Table({
                   )}
                 </td>
               ))}
-              {onEdit && (
+              {(onEdit || onDelete) && (
                 <td>
-                  <button className="text-button" onClick={() => onEdit(row)}>
-                    Edit <ChevronRight size={14} />
-                  </button>
+                  <div className="user-row-actions">
+                    {onEdit && (
+                      <button
+                        className="text-button"
+                        disabled={
+                          Boolean(deleting) || Boolean(row.deletionPending)
+                        }
+                        onClick={() => onEdit(row)}
+                      >
+                        Edit <ChevronRight size={14} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        className="text-button delete-user-button"
+                        disabled={
+                          Boolean(deleting) ||
+                          Boolean(deleteBlocked) ||
+                          row.id === ownUid
+                        }
+                        aria-label={`Delete ${String(row.fullName || row.title || row.name || row.email || row.id)}`}
+                        title={
+                          row.id === ownUid
+                            ? "You cannot delete your own account"
+                            : deleteBlocked || "Delete"
+                        }
+                        onClick={() => onDelete(row)}
+                      >
+                        {deleting === row.id
+                          ? "Deleting..."
+                          : row.deletionPending
+                            ? "Retry Delete"
+                            : "Delete"}
+                      </button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>
@@ -891,7 +1377,19 @@ function Table({
     </div>
   );
 }
-function Records({ module }: { module: Module }) {
+function Records({
+  module,
+  actor,
+  participantFilter = {},
+  clearFilter,
+}: {
+  module: Module;
+  actor: Actor;
+  participantFilter?: ParticipantFilter;
+  clearFilter?: () => void;
+}) {
+  const [deleting, setDeleting] = useState<string>();
+  const [success, setSuccess] = useState("");
   const [rows, setRows] = useState<Row[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -902,8 +1400,16 @@ function Records({ module }: { module: Module }) {
     setLoading(true);
     setError("");
     try {
+      const query = new URLSearchParams();
+      if (after) query.set("after", after);
+      if (module === "participants") {
+        if (participantFilter.role) query.set("role", participantFilter.role);
+        if (participantFilter.status)
+          query.set("status", participantFilter.status);
+        if (participantFilter.excludeDemo) query.set("excludeDemo", "true");
+      }
       const data = await request<{ rows: Row[]; next: string | null }>(
-        `/records/${module}${after ? `?after=${encodeURIComponent(after)}` : ""}`,
+        `/records/${module}${query.size ? `?${query}` : ""}`,
       );
       setRows((old) => (after ? [...old, ...data.rows] : data.rows));
       setNext(data.next);
@@ -915,7 +1421,12 @@ function Records({ module }: { module: Module }) {
   }
   useEffect(() => {
     void load();
-  }, [module]);
+  }, [
+    module,
+    participantFilter.role,
+    participantFilter.status,
+    participantFilter.excludeDemo,
+  ]);
   const columns =
     module === "participants"
       ? ["fullName", "email", "role", "registrationStatus"]
@@ -930,6 +1441,11 @@ function Records({ module }: { module: Module }) {
   return (
     <>
       <Message error={error} />
+      {success && (
+        <p className="success" role="status">
+          {success}
+        </p>
+      )}
       <section className="panel">
         <div className="toolbar">
           <div className="search">
@@ -942,7 +1458,22 @@ function Records({ module }: { module: Module }) {
             />
           </div>
           <span className="record-count">{rows.length} loaded</span>
-          {module === "participants" && (
+          {module === "participants" &&
+            Object.keys(participantFilter).length > 0 && (
+              <div className="filter-summary" role="status">
+                <span>
+                  Showing:{" "}
+                  {participantFilter.role ||
+                    participantFilter.status ||
+                    "all registrations"}{" "}
+                  ? excluding demo records
+                </span>
+                <button className="text-button" onClick={clearFilter}>
+                  Clear filters
+                </button>
+              </div>
+            )}
+          {module === "participants" && can(actor, "reports", "read") && (
             <button
               className="secondary"
               onClick={async () => {
@@ -960,7 +1491,11 @@ function Records({ module }: { module: Module }) {
               Export
             </button>
           )}
-          <button className="primary" onClick={() => setSelected(null)}>
+          <button
+            className="primary"
+            disabled={!can(actor, module, "write")}
+            onClick={() => setSelected(null)}
+          >
             <Plus size={17} />
             Add{" "}
             {module === "users"
@@ -980,16 +1515,86 @@ function Records({ module }: { module: Module }) {
         </div>
         {module === "users" && (
           <p className="inline-note">
-            Users must already have a Firebase Authentication account. Dashboard
-            access is separate from their conference role.
+            Create a Firebase login with a password, or invite a user by email.
+            Dashboard access and conference roles are managed separately.
           </p>
         )}
         {loading && !rows.length ? (
           <Loading />
         ) : filtered.length ? (
-          <Table rows={filtered} columns={columns} onEdit={setSelected} />
+          <Table
+            rows={filtered}
+            columns={columns}
+            onEdit={can(actor, module, "write") ? setSelected : undefined}
+            ownUid={actor.uid}
+            deleting={deleting}
+            deleteBlocked={
+              ["staff", "submissions"].includes(module)
+                ? "Linked duties and papers must be reassigned before deletion"
+                : undefined
+            }
+            onDelete={
+              actor.role === "superadmin"
+                ? async (row) => {
+                    const name = String(
+                      row.fullName ||
+                        row.title ||
+                        row.name ||
+                        row.email ||
+                        row.id,
+                    );
+                    if (
+                      !window.confirm(
+                        module === "users"
+                          ? `Permanently delete ${name} (${String(row.email)})? This removes their Firebase login and dashboard access. Conference registration and history are retained. This cannot be undone.`
+                          : `Delete ${name}? It will be removed from all lists and the app. Its history stays in the audit log.`,
+                      )
+                    )
+                      return;
+                    setDeleting(row.id);
+                    setError("");
+                    setSuccess("");
+                    try {
+                      if (module === "users")
+                        await request(
+                          `/control/users/${encodeURIComponent(row.id)}/delete`,
+                          {
+                            method: "POST",
+                            body: JSON.stringify({
+                              version: Number(row.version || 1),
+                            }),
+                          },
+                        );
+                      else
+                        await request(
+                          `/records/${module}/${encodeURIComponent(row.id)}/archive`,
+                          { method: "POST" },
+                        );
+                      setSuccess(
+                        module === "users"
+                          ? "User login and dashboard access deleted. Conference history retained."
+                          : `${name} deleted. Its history is kept in the audit log.`,
+                      );
+                      await load();
+                    } catch (error) {
+                      const message = (error as Error).message;
+                      await load();
+                      setError(message);
+                    } finally {
+                      setDeleting(undefined);
+                    }
+                  }
+                : undefined
+            }
+          />
         ) : (
-          <Empty />
+          <Empty
+            description={
+              can(actor, module, "write")
+                ? "Add your first record to get started."
+                : "Records will appear here when your administrator publishes them."
+            }
+          />
         )}
         {next && (
           <button
@@ -1005,10 +1610,12 @@ function Records({ module }: { module: Module }) {
       {module === "meals" && <CouponTools />}
       {selected !== undefined && (
         <Editor
+          actor={actor}
           module={module}
           row={selected}
           close={() => setSelected(undefined)}
           saved={() => {
+            setSuccess("Record and login setup saved successfully.");
             setSelected(undefined);
             void load();
           }}
@@ -1018,25 +1625,39 @@ function Records({ module }: { module: Module }) {
   );
 }
 function Editor({
+  actor,
   module,
   row,
   close,
   saved,
 }: {
   module: Module;
+  actor: Actor;
   row: Row | null;
   close: () => void;
   saved: () => void;
 }) {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [roleOptions, setRoleOptions] = useState<string[]>([...accessRoles]);
+  useEffect(() => {
+    if (module === "users")
+      request<{ id: string; active: boolean }[]>("/control/roles")
+        .then((roles) =>
+          setRoleOptions(roles.filter((r) => r.active).map((r) => r.id)),
+        )
+        .catch((e) => setError(e.message));
+  }, [module]);
+  const editorFields = fields[module].map((f) =>
+    f.key === "accessRole" ? { ...f, options: roleOptions } : f,
+  );
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError("");
     const form = new FormData(e.currentTarget);
     const data = Object.fromEntries(
-      fields[module].map((f) => [
+      editorFields.map((f) => [
         f.key,
         f.type === "number"
           ? Number(form.get(f.key) || 0)
@@ -1046,7 +1667,11 @@ function Editor({
     try {
       await request(`/records/${module}`, {
         method: "POST",
-        body: JSON.stringify({ id: row?.id, version: row?.version || 1, data }),
+        body: JSON.stringify({
+          id: row?.id,
+          version: row?.version || 1,
+          data,
+        }),
       });
       saved();
     } catch (e) {
@@ -1075,7 +1700,7 @@ function Editor({
         <Message error={error} />
         <form onSubmit={submit}>
           <div className="form-grid">
-            {fields[module].map((f) => (
+            {editorFields.map((f) => (
               <label
                 key={f.key}
                 className={f.type === "textarea" ? "full-width" : ""}
@@ -1117,35 +1742,37 @@ function Editor({
             <button type="button" className="secondary" onClick={close}>
               Cancel
             </button>
-            {row && !["staff", "submissions"].includes(module) && (
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy}
-                onClick={async () => {
-                  if (
-                    !window.confirm(
-                      "Archive this record? Its history will be retained.",
+            {row &&
+              can(actor, module, "archive") &&
+              !["staff", "submissions"].includes(module) && (
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy}
+                  onClick={async () => {
+                    if (
+                      !window.confirm(
+                        "Archive this record? Its history will be retained.",
+                      )
                     )
-                  )
-                    return;
-                  setBusy(true);
-                  try {
-                    await request(
-                      `/records/${module}/${encodeURIComponent(row.id)}/archive`,
-                      { method: "POST" },
-                    );
-                    saved();
-                  } catch (e) {
-                    setError((e as Error).message);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                Archive record
-              </button>
-            )}
+                      return;
+                    setBusy(true);
+                    try {
+                      await request(
+                        `/records/${module}/${encodeURIComponent(row.id)}/archive`,
+                        { method: "POST" },
+                      );
+                      saved();
+                    } catch (e) {
+                      setError((e as Error).message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Archive record
+                </button>
+              )}
             <button className="primary" disabled={busy}>
               {busy ? "Saving…" : "Save record"}
             </button>
@@ -1166,7 +1793,9 @@ function download(blob: Blob, name: string) {
 function Media() {
   const [rows, setRows] = useState<Row[]>([]),
     [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [query, setQuery] = useState("");
+  const shown = rows.filter((row) => matchesSearch(query, row.name));
   async function load() {
     try {
       setRows(await request<Row[]>("/media"));
@@ -1222,15 +1851,25 @@ function Media() {
           </button>
         </form>
         {rows.length ? (
-          <div className="media-grid">
-            {rows.map((row) => (
-              <MediaCard
-                key={row.id}
-                row={row}
-                onArchived={() => void load()}
-              />
-            ))}
-          </div>
+          <>
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              label="images by file name"
+              shown={shown.length}
+              total={rows.length}
+            />
+            <div className="media-grid">
+              {shown.map((row) => (
+                <MediaCard
+                  key={row.id}
+                  row={row}
+                  onArchived={() => void load()}
+                />
+              ))}
+            </div>
+            {!shown.length && <NoMatches what="images" query={query} />}
+          </>
         ) : (
           <Empty
             title="Your media library is ready"
@@ -1343,6 +1982,14 @@ function Email() {
   );
 }
 function SettingsPage() {
+  return (
+    <>
+      <BrandingEditor />
+      <ApplicationControls />
+    </>
+  );
+}
+function ApplicationControls() {
   const [data, setData] = useState<Record<string, unknown> | null>(null),
     [error, setError] = useState(""),
     [note, setNote] = useState("");
@@ -1458,7 +2105,8 @@ function LogTable({
   endpoint: "audit" | "analysis" | "imports" | "redemptions";
 }) {
   const [rows, setRows] = useState<Row[] | null>(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [query, setQuery] = useState("");
   useEffect(() => {
     request<Row[]>(`/${endpoint}`)
       .then(setRows)
@@ -1472,6 +2120,9 @@ function LogTable({
         : endpoint === "imports"
           ? ["fileName", "status", "total", "createdAt"]
           : ["couponId", "participantEmail", "meal", "day"];
+  const shownRows = (rows || []).filter((row) =>
+    matchesSearch(query, ...columns.map((c) => row[c])),
+  );
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -1489,7 +2140,25 @@ function LogTable({
       <Message error={error} />
       {rows ? (
         rows.length ? (
-          <Table rows={rows} columns={columns} />
+          <>
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              label={
+                endpoint === "audit"
+                  ? "activity by person, action or target"
+                  : endpoint === "analysis"
+                    ? "reports by tool, result or build"
+                    : endpoint === "imports"
+                      ? "imports by workbook or status"
+                      : "redemptions by coupon, email or meal"
+              }
+              shown={shownRows.length}
+              total={rows.length}
+            />
+            <Table rows={shownRows} columns={columns} />
+            {!shownRows.length && <NoMatches what="records" query={query} />}
+          </>
         ) : (
           <Empty
             title="No activity recorded"

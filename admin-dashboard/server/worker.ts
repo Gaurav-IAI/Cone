@@ -2,6 +2,7 @@ import "dotenv/config";
 import { randomUUID } from "node:crypto";
 import { db } from "./firebase.js";
 import { mailTransport, sender } from "./mail.js";
+import { runtimeConfiguration } from "./control.js";
 let stopping = false;
 process.on("SIGINT", () => {
   stopping = true;
@@ -9,7 +10,8 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
   stopping = true;
 });
-async function tick() {
+export async function tick() {
+  if (!(await runtimeConfiguration()).emailEnabled) return;
   const jobs = await db
     .collection("emailJobs")
     .where("status", "in", ["queued", "retry", "processing"])
@@ -20,7 +22,10 @@ async function tick() {
     const lease = randomUUID();
     const job = await db.runTransaction(async (tx) => {
       const snapshot = await tx.get(document.ref);
+      const runtime = await tx.get(db.doc("applicationSettings/runtime"));
+      if (runtime.data()?.emailEnabled === false) return null;
       const data = snapshot.data()!;
+      if (!["queued", "retry", "processing"].includes(data.status)) return null;
       if (
         data.status === "processing" &&
         Date.parse(data.leaseUntil) > Date.now()
@@ -75,8 +80,8 @@ async function tick() {
     }
   }
 }
-console.log("CONE email worker started");
-while (!stopping) {
+if (process.env.NODE_ENV !== "test") console.log("CONE email worker started");
+while (process.env.NODE_ENV !== "test" && !stopping) {
   try {
     await tick();
   } catch {

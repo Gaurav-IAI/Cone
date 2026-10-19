@@ -5,6 +5,8 @@ Application: CONE — Conference Operations & Networking Environment.
 Conference: 21st Uttarakhand State Science & Technology Congress 2026-27.  
 Prepared: 18 October 2026.
 
+Implementation update: the TypeScript dashboard now includes a [Super Admin Control Center](admin-dashboard/SUPERADMIN_CONTROL_CENTER.md) with user/session controls, managed role policies, runtime feature settings, job recovery, and monitoring. The linked guide distinguishes implemented rights from mobile/infrastructure integration boundaries.
+
 ## 1. Purpose and scope
 
 Build a responsive web dashboard for managing the conference application, its users, organizers, registrations, scientific programme, passes, meal coupons, images, email delivery, and spreadsheet imports. The Super Admin controls both conference operations and software configuration.

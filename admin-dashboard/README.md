@@ -1,5 +1,62 @@
 # CONE TypeScript Admin Dashboard
 
+## Role-aware interface
+
+The dashboard now uses a shared navy/teal design system with role accents, task-focused welcome cards, grouped navigation, and a feature finder. Home actions are generated from the signed-in user's actual permissions: Super Admin emphasizes system/access controls; conference administrators and organizers emphasize event coordination; registration staff see participant/import/fee work; programme staff see sessions/papers/venues; Meal Desk focuses on redemption; Participant sees only their own conference information.
+
+The Participant page reads the authenticated user's own registration through `/api/profile`, including their schedule and issued meal arrangements. It does not expose a participant directory or another user's records. Manual and development one-click logins remain available.
+
+Shared styling is in `src/dashboard-theme.css`; role-specific presentation and shortcuts are in `src/RoleWorkspace.tsx`. The mobile/tablet drawer supports navigation search, backdrop dismissal, Escape, focus trapping, and inactive off-screen content. Tables scroll within their panels on small screens; dialogs, forms, and cards adapt to the viewport. Motion follows the system's reduced-motion preference.
+
+Browser checks cover all seven test roles at 1440px desktop, 834px tablet, and 390px mobile widths, in addition to existing login, participant editing, and Control Center workflows.
+
+## Super Admin management
+
+The new **Control Center** centralizes Firebase user/session operations, custom roles and permission matrices, runtime settings, job recovery, and system monitoring. See [Super Admin rights and operating guide](SUPERADMIN_CONTROL_CENTER.md) for the implemented capabilities, lockout safeguards, and mobile/infrastructure integration boundaries. Existing account credentials and developer role-login buttons remain available.
+
+## Dashboard test logins
+
+### Temporary one-click dashboard login
+
+The existing dashboard login form also offers separate Login buttons for all seven software roles. These buttons use the already-provisioned dashboard test accounts; they do not create records or grant permissions. Manual email/password login remains available.
+
+Both `APP_ENV=development` and `APP_ENV=test` support these explicitly enabled local shortcuts. `APP_ENV=production` or `NODE_ENV=production` disables them.
+
+Enable all of these local settings and restart `npm run dev`:
+
+```dotenv
+APP_ENV=development
+ENABLE_ADMIN_TEST_ACCOUNTS=true
+ENABLE_DASHBOARD_ROLE_LOGIN=true
+VITE_ENABLE_DASHBOARD_ROLE_LOGIN=true
+```
+
+To remove the buttons, set `VITE_ENABLE_DASHBOARD_ROLE_LOGIN=false`. To disable their API as well, set `ENABLE_DASHBOARD_ROLE_LOGIN=false`. Production frontend builds exclude the one-click component even if its flag is true. The API returns 404 in production or when either server flag is off. It additionally requires loopback host/socket/browser origin and rejects forwarded requests. Use `http://localhost:3000` or `http://127.0.0.1:3000` locally.
+
+The endpoint reads the ignored `storage/admin-test-credentials.json` file and verifies Firebase test markers, signed test-account claims, active status, and the matching role before supplying credentials to the local development browser for a normal Firebase password sign-in. Passwords are not embedded in frontend assets or `VITE_*` settings. Keep this local testing option disabled on hosted infrastructure. This feature applies only to the web dashboard, not Flutter/mobile login.
+
+Dedicated role-specific Firebase dashboard accounts have been provisioned separately from the mobile demo participants. Their generated credentials are saved locally in `storage/admin-test-credentials.json` (ignored by Git). The Super Admin test address is `superadmin@cone-admin.test`; other addresses and passwords are in that file. These are reserved test identities, not deliverable mailboxes, so password recovery by email is unavailable.
+
+Use `APP_ENV=development` and `ENABLE_ADMIN_TEST_ACCOUNTS=true` for these accounts. The development-only MFA exemption requires the account marker, matching reserved email, and signed Firebase test claim together. Production rejects marked test accounts; real administrative accounts retain the normal MFA requirement. Never use these fixtures as production credentials.
+
+Run `npm run setup:admin-test-accounts` to reapply this explicit development fixture setup with Firebase Admin credentials. It reuses the locally saved passwords, verifies Firebase sign-in, and does not modify unrelated participant or admin accounts. Restart the API after changing environment flags. Keep the generated credential file private.
+
+> **Current testing login:** the APK connects directly to Firebase using the six
+> fictional demo accounts. Enter the exact registered name, email and mobile and
+> tap Continue. No testing API URL, custom-token signer, OTP, email or manual
+> verification is required. Roles and dashboard data are read from live Firestore.
+>
+> Build: `flutter build apk --release` from the Flutter project root.
+> First-time setup/refresh: `node tools/seed/setup_direct_demo_login.mjs` with ADC.
+> The generated `assets/testing/demo_login.json` is ignored by Git and contains
+> credentials only for the six fictional demo accounts, never admin credentials.
+> These demo credentials are bundled into the testing APK and are extractable;
+> this is deliberately a demo-only build. Disable it with
+> `--dart-define=DIRECT_DEMO_LOGIN=false` before restoring other login modes.
+> Previous API/verification setup sections below describe retained alternatives
+> and are not required for the current direct-login testing flow.
+
+
 React + TypeScript + Vite frontend, Express + TypeScript API, Firebase Authentication, and Cloud Firestore. Image bytes stay on the local VPS filesystem. This project lives independently from the Flutter application and preserves its `people`, `conference/main`, `couponIndex`, and `mealRedemptions` data contracts.
 
 ## Local setup
@@ -102,3 +159,117 @@ Dependency overrides pin compatible Firebase app packages for Node 20 and patch 
 - [Dashboard specification](../DASHBOARD_REQUIREMENTS.md)
 - [Firebase ID-token verification](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
 - [Vite setup and runtime requirements](https://vite.dev/guide/)
+
+
+## Mobile test accounts and verification
+
+The six persisted mobile registrations are in `../tools/seed/seed_data.json`.
+The Presenter, Attendee, Speaker, VIP, Organiser and Volunteer accounts use
+`presenter@gmail.com`, `attendee@gmail.com`, `speaker@gmail.com`, `vip@gmail.com`,
+`organizer@gmail.com` and `volunteer@gmail.com`. Existing names, mobile numbers,
+Auth UIDs, registration IDs, passes and coupons are retained when updating them.
+
+Enable the no-email verification routes only on a private testing API:
+
+```dotenv
+APP_ENV=test
+TEST_IN_APP_EMAIL_VERIFICATION=true
+```
+
+`APP_ENV=development` is also supported. The testing flag is disabled by default;
+if enabled with any other environment, startup is rejected. These routes generate
+Firebase links without SMTP and save verified status only after Firebase sign-in.
+
+Run `npm run verify:test-accounts` with Firebase Application Default Credentials
+to upsert the six requested identity records in the actual Firebase project,
+exercise both application verification routes and real Firebase sign-in, then
+read back verification status. The command retains existing Auth users and
+associated data. It writes to the live database and sends no email.
+
+For a testing APK, point it at this API using a device-reachable HTTPS address:
+
+```powershell
+flutter build apk --release --dart-define=IN_APP_EMAIL_VERIFICATION=true --dart-define=TEST_VERIFICATION_API_URL=https://YOUR-TEST-API
+```
+
+Run Flutter commands from the parent project directory. The local integration
+check runs the real Express routes against live Firebase, without deploying an
+API or claiming that an installed APK has been exercised on a physical device.
+
+
+### Temporary automatic verification on Continue
+
+The mobile app now skips the manual verification page by default in testing.
+`POST /api/testing/continue` matches the existing name, email and mobile, keeps the
+existing Auth UID, sets `emailVerified: true` and `emailVerificationStatus: Verified`,
+and returns a custom sign-in token. It never generates or sends an email link/OTP.
+`npm run verify:test-accounts` now exercises this automatic route.
+
+Custom-token creation requires Firebase Admin signing credentials. Use an existing
+service-account credential, or specify `FIREBASE_SERVICE_ACCOUNT_ID` with an ADC
+caller that already has `iam.serviceAccounts.signBlob` on it. Missing signing
+permissions return a configuration error without falling back to email delivery.
+The existing verification routes remain available for restoration using the mobile
+build flag `AUTO_VERIFY_EMAIL=false`. The API remains limited to test/development.
+### Building a connected testing APK
+
+The installed APK must include the real testing API address; the admin `.env`
+file is not automatically included in Flutter builds. The Android release
+manifest includes INTERNET permission.
+
+From the project root, use:
+
+```powershell
+.\tools\build_test_apk.ps1 -ApiUrl https://YOUR-ACTUAL-TEST-API
+```
+
+Replace the example with the real HTTPS API origin. The script rejects
+placeholders and localhost, checks the API health and automatic Continue route
+using the existing presenter account, then embeds the URL and builds the APK.
+The preflight marks that test account Verified but does not send email. If the
+server is unavailable or lacks signing credentials, no APK is built. Reinstall
+the resulting `build/app/outputs/flutter-apk/app-release.apk` on the phone.
+The presenter login name is exactly `Aarav Mehra` (not `Arav Mehra`).
+
+### Dashboard-created credentials and development email delivery
+
+Use **User Management ? Add user** to create a Firebase Authentication account, assign an active dashboard role, and create the linked mobile registration. Enter a password of at least 12 characters. **Add participant** creates the participant registration, Firebase login and participant dashboard access together. Passwords are stored only by Firebase Authentication; profiles, audit logs and email jobs do not contain them.
+
+Existing identities can receive dashboard access through User Management without re-creating the Firebase account. Only Super Admin can change an existing identity's password. Editing a dashboard role preserves the user's separate conference role and existing programme/coupon data. Changing a role revokes existing sessions; sign in again to use the new permissions.
+
+In development/test only, with `TEST_IN_APP_EMAIL_VERIFICATION=true`, newly provisioned identities are marked verified by the trusted API so password login works without an email-verification step. Production does not apply this bypass. Super Admin MFA remains required outside the dedicated development fixtures. Invitations in this development mode contain password setup instructions without a verification link.
+
+The mobile login now accepts a password for dashboard-created accounts alongside the existing name/email/mobile fields. Leave it blank for the existing bundled demo accounts. Rebuild/reinstall the mobile app to see this field. Dashboard roles control the web dashboard; conference roles control the mobile interface.
+
+`npm run dev` now starts the API, frontend **and email worker**. Restart an existing development command to load this change and environment values. Production still requires the separate `npm run worker:production` process. SMTP connection tests send immediately; invitations and template messages are queued. Saving a template or SMTP settings alone does not send email.
+
+If provisioning reports that a participant was saved but login setup failed, edit that participant, supply the password and retry. For an older registration created without a login, use User Management to create its account and assign dashboard access. Security checks may require a fresh sign-in before changing credentials or roles.
+
+### Overview navigation and recent activity
+
+Super Admin overview KPI cards and all six People at the centre categories open existing management views without a page reload. Participant drill-downs apply server-side role/status filters, exclude demo and archived records, retain pagination, and show a Clear filters action. Meals served opens meal redemptions for authorized users; users with meal-management access can open that section instead. Links respect the current user's read permissions.
+
+Recent activity uses the eight newest existing audit events, including action, actor, target and an India-time timestamp, with links to the appropriate management section. The audit query is permission-gated and runs concurrently with the existing overview queries. Users without audit access retain the recent-imports view. No new event store or frontend request is required.
+
+### Login UI update — OTP plan awaiting approval
+
+The mobile login password field has been removed. The mobile form now uses Name, Email ID, Mobile Number and Continue with the existing development flow. The earlier password-field instructions above are superseded for the mobile UI. The default demo login still supports its bundled fixtures; removing the field does not enable arbitrary new accounts through a name/email/mobile-only production login. Backend password provisioning and the separate React admin login have not been migrated in this step. See `../EMAIL_OTP_IMPLEMENTATION_PLAN.md` for the proposed numeric email OTP flow and approval boundary. No OTP email sending has been enabled.
+
+
+### Optional numeric email OTP implementation
+
+The approved mobile-first OTP implementation is on the local `feature/email-otp-auth` branch. See [OTP_IMPLEMENTATION.md](OTP_IMPLEMENTATION.md) for configuration and staging steps. Current demo/no-email settings and separate admin MFA login are retained. OTP endpoints are disabled unless explicitly enabled; live rules and providers have not been changed.
+
+### App Branding
+
+Open **Application settings > App Branding** as Super Admin. Enter the application name and optionally choose a logo, inspect the preview, then save. JPEG, PNG and WebP are accepted up to 2 MB and 4096 pixels per side; animated images and SVG are rejected. The server validates image contents, strips metadata and stores an optimized WebP in `STORAGE_ROOT` on the VPS. Replacements get new URLs so cached images do not hide the update. Removing a logo falls back to the application initial.
+
+The name reuses `applicationSettings/runtime.applicationName`. A transaction updates that document and the public `conference/branding` document, including the logo reference. Optimistic versions prevent conflicting saves, and an audit event records the change. The existing Control Center application-name setting also updates the same public document. Only an active Super Admin with recent authentication may save branding; browser visibility alone is not the security control.
+
+The web login, sidebar, header, footer, document title, favicon and participant instructions use a shared branding provider. The saving browser updates immediately; other open browsers refresh on focus or within 30 seconds. Flutter listens to the public branding document and updates the in-app logo/name on login, dashboards, passes and app-information screens. Its existing logo widget handles image-load failures gracefully. Old installed mobile builds need one rebuild/install to acquire this capability; later branding updates require no code changes or rebuild.
+
+Set `PUBLIC_API_BASE_URL` on the backend to the externally reachable API **origin**, for example `https://api.your-domain.example` (without `/api`). The default is `http://localhost:8080`, suitable for a browser on the development machine. A physical phone cannot use that localhost URL: use the VPS HTTPS origin or a reachable development host. Save branding again after changing this origin to publish the new logo URL to mobile clients. Keep `STORAGE_ROOT` persistent across API restarts/deployments. Only branding logo files are public; participant uploads retain their existing authentication requirements. The public document contains no SMTP credentials or private settings. Existing conference read rules already allow this document; no new rules deployment was necessary.
+
+This feature controls runtime **in-app** branding. Operating-system launcher labels/icons, package identifiers, store listing names and historical generated documents are separate build/store assets and are not renamed by a dashboard setting.
+
+Validation includes API role/size/content tests, the complete Firestore/Auth emulator upload/save/read/removal workflow, web preview/save/reload coverage, branding across all seven role dashboards, and Flutter live-branding updates. These checks use test data; existing production branding was not renamed during implementation.

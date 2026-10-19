@@ -19,7 +19,7 @@ import { getAuth } from 'firebase-admin/auth';
 
 const PROJECT_ID = 'conferencemanagement-239a3';
 const here = dirname(fileURLToPath(import.meta.url));
-const data = JSON.parse(readFileSync(join(here, 'seed_data.json'), 'utf8'));
+const data = JSON.parse(readFileSync(join(here, process.argv.includes('--verification-test-data') ? 'verification_test_data.json' : 'seed_data.json'), 'utf8'));
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
 
@@ -80,7 +80,7 @@ async function removeImportedDuplicates(auth) {
 async function seedAuth(auth) {
   await removeImportedDuplicates(auth);
   for (const p of data.people) {
-    const fields = { displayName: p.fullName, emailVerified: true };
+    const fields = { displayName: p.fullName, emailVerified: p.emailVerified ?? true };
     try {
       const user = await auth.getUserByEmail(p.email);
       await auth.updateUser(user.uid, fields);

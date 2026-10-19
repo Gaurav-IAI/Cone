@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, FileSpreadsheet, Upload, CheckCircle2 } from "lucide-react";
 import { conferenceRoles } from "../shared/schema";
 import { request } from "./firebase";
+import SearchBox, { matchesSearch, NoMatches } from "./SearchBox";
 type Sheet = { name: string; rows: number; headers: string[] };
 type Preview = {
   id: string;
@@ -66,7 +67,11 @@ export default function ImportCenter() {
     [error, setError] = useState(""),
     [note, setNote] = useState(""),
     [busy, setBusy] = useState(false),
-    [revision, setRevision] = useState(0);
+    [revision, setRevision] = useState(0),
+    [query, setQuery] = useState("");
+  const shownJobs = jobs.filter((job) =>
+    matchesSearch(query, job.fileName, job.status, job.createdAt),
+  );
   useEffect(() => {
     request<Job[]>("/imports")
       .then(setJobs)
@@ -359,6 +364,13 @@ export default function ImportCenter() {
             Refresh
           </button>
         </div>
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          label="imports by workbook or status"
+          shown={shownJobs.length}
+          total={jobs.length}
+        />
         <div className="table-wrap">
           <table>
             <thead>
@@ -371,7 +383,7 @@ export default function ImportCenter() {
               </tr>
             </thead>
             <tbody>
-              {jobs.map((job) => (
+              {shownJobs.map((job) => (
                 <tr key={job.id}>
                   <td>{job.fileName}</td>
                   <td>
@@ -395,6 +407,9 @@ export default function ImportCenter() {
             </tbody>
           </table>
           {!jobs.length && <p className="inline-note">No imports yet.</p>}
+          {jobs.length > 0 && !shownJobs.length && (
+            <NoMatches what="imports" query={query} />
+          )}
         </div>
       </section>
     </>

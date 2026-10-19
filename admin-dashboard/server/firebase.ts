@@ -4,6 +4,9 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 initializeApp({
   projectId: process.env.FIREBASE_PROJECT_ID,
+  ...(process.env.FIREBASE_SERVICE_ACCOUNT_ID
+    ? { serviceAccountId: process.env.FIREBASE_SERVICE_ACCOUNT_ID }
+    : {}),
   ...(process.env.FIRESTORE_EMULATOR_HOST
     ? {}
     : { credential: applicationDefault() }),

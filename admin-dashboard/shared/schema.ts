@@ -21,10 +21,11 @@ export type Actor = {
   uid: string;
   email: string;
   fullName: string;
-  role: AccessRole;
+  role: string;
   conferenceId: string;
   status: string;
   authTime?: number;
+  permissions?: string[];
 };
 export const mobile = z
   .string()
@@ -72,7 +73,7 @@ export const participantSchema = identity
   .strict();
 export const userSchema = identity
   .extend({
-    accessRole: z.enum(accessRoles),
+    accessRole: z.string().regex(/^[a-z][a-z0-9_]{2,40}$/),
     conferenceId: z.literal("main"),
     status: z.enum(["active", "disabled"]),
   })
@@ -237,12 +238,20 @@ export const permissions: Record<AccessRole, string[]> = {
   meal_desk: ["redemptions"],
   participant: ["self"],
 };
-export function can(actor: Actor, resource: string) {
+export function can(
+  actor: Actor,
+  resource: string,
+  action?: "read" | "write" | "archive",
+) {
+  const grants =
+    actor.permissions ?? permissions[actor.role as AccessRole] ?? [];
+  const allowed =
+    grants.includes(resource) ||
+    grants.includes(`${resource}:${action}`) ||
+    (!action && grants.some((p) => p.startsWith(`${resource}:`)));
   return (
     actor.status === "active" &&
-    (actor.role === "superadmin" ||
-      (actor.conferenceId === "main" &&
-        permissions[actor.role].includes(resource)))
+    (actor.role === "superadmin" || (actor.conferenceId === "main" && allowed))
   );
 }
 export const collectionNames: Record<Module, string> = {

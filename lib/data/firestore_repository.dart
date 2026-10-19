@@ -1,3 +1,4 @@
+import '../app/branding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'cone_repository.dart';
@@ -5,12 +6,18 @@ import 'models.dart';
 
 /// Reads `conference/main`, `people/{email}` and `couponIndex/{couponId}`.
 /// Access is limited by firestore.rules (own record; staff/organiser extras).
-class FirestoreConeRepository implements ConeRepository {
+class FirestoreConeRepository implements ConeRepository, BrandingSource {
   FirestoreConeRepository({FirebaseFirestore? firestore})
     : _db = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _db;
   Conference? _conference;
+
+  @override
+  Stream<AppBranding> watchBranding() => _db
+      .doc('conference/branding')
+      .snapshots()
+      .map((snapshot) => AppBranding.fromJson(snapshot.data()));
 
   @override
   Future<Conference> conference() async {

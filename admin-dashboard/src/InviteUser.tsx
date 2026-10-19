@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail } from "lucide-react";
 import { accessRoles } from "../shared/schema";
 import { request } from "./firebase";
@@ -6,6 +6,14 @@ export default function InviteUser() {
   const [error, setError] = useState(""),
     [note, setNote] = useState(""),
     [busy, setBusy] = useState(false);
+  const [roles, setRoles] = useState<string[]>([...accessRoles]);
+  useEffect(() => {
+    request<{ id: string; active: boolean }[]>("/control/roles")
+      .then((items) =>
+        setRoles(items.filter((role) => role.active).map((role) => role.id)),
+      )
+      .catch((e) => setError(e.message));
+  }, []);
   return (
     <section className="panel">
       <div className="panel-heading">
@@ -63,7 +71,7 @@ export default function InviteUser() {
           <label>
             Dashboard role
             <select name="accessRole" defaultValue="organizer">
-              {accessRoles.map((role) => (
+              {roles.map((role) => (
                 <option key={role}>{role}</option>
               ))}
             </select>

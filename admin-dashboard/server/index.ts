@@ -1,4 +1,21 @@
+import { registerPublicBranding, registerBrandingAdmin } from "./branding.js";
+import { registerEmailOtp } from "./email-otp.js";
+import {
+  ensureIdentity,
+  ensurePerson,
+  ensureParticipantAccess,
+  developmentVerificationBypass,
+} from "./accounts.js";
 import "dotenv/config";
+import { allowAdminTestLogin } from "./admin-test-access.js";
+import { registerDevRoleLogin } from "./dev-role-login.js";
+import {
+  controlRouter,
+  runtimeConfiguration,
+  saveDashboardUser,
+} from "./control.js";
+import { resolveRole } from "../shared/control.js";
+import { registerTestingVerification } from "./testing-verification.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -25,18 +42,29 @@ import {
 import { encryptSecret } from "./secrets.js";
 import { readWorkbook } from "./workbook.js";
 import {
+  personVariables,
+  renderTemplate,
+  roleTemplates,
+} from "../shared/email-templates.js";
+import {
   can,
   schemas,
   collectionNames,
   conferenceSchema,
   settingsSchema,
   participantSchema,
+  conferenceRoles,
   accessRoles,
   type Actor,
   type Module,
 } from "../shared/schema.js";
 
 export const app = express();
+if (
+  process.env.OTP_AUTH_ENABLED === "true" &&
+  process.env.APP_ENV === "production"
+)
+  app.set("trust proxy", "loopback");
 const storage = path.resolve(process.env.STORAGE_ROOT || "./storage");
 if (
   process.env.APP_ENV === "production" &&
@@ -63,7 +91,13 @@ const upload = multer({
 type Request = express.Request & { actor?: Actor };
 const actorOf = (req: express.Request) => (req as Request).actor!;
 function requirePermission(req: express.Request, resource: string) {
-  if (!can(actorOf(req), resource))
+  const action =
+    req.method === "GET"
+      ? "read"
+      : req.path.endsWith("/archive")
+        ? "archive"
+        : "write";
+  if (!can(actorOf(req), resource, action))
     throw Object.assign(
       new Error("You do not have permission for this action"),
       { status: 403 },
@@ -100,6 +134,10 @@ async function audit(actor: Actor, action: string, target: string) {
 app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", service: "cone-admin-api" }),
 );
+registerPublicBranding(app, storage);
+registerEmailOtp(app);
+registerTestingVerification(app);
+registerDevRoleLogin(app);
 app.use("/api", async (req: Request, _res, next) => {
   try {
     const token = req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];
@@ -108,6 +146,11 @@ app.use("/api", async (req: Request, _res, next) => {
         Object.assign(new Error("Sign in to continue"), { status: 401 }),
       );
     const decoded = await auth.verifyIdToken(token, true);
+    if (decoded.login_audience === "mobile")
+      fail(
+        "This session is for the mobile application. Use the dashboard sign-in.",
+        403,
+      );
     if (!decoded.email_verified)
       fail("Verify your email before signing in", 403);
     const snapshot = await db.doc(`adminUsers/${decoded.uid}`).get();
@@ -115,13 +158,28 @@ app.use("/api", async (req: Request, _res, next) => {
     if (
       !user ||
       user.status !== "active" ||
-      !accessRoles.includes(user.accessRole)
+      typeof user.accessRole !== "string" ||
+      !/^[a-z][a-z0-9_]{2,40}$/.test(user.accessRole)
     )
       fail(
         "No active dashboard account. Ask your Super Admin for access.",
         403,
       );
+    const definition =
+      user.accessRole === "superadmin"
+        ? undefined
+        : (await db.doc(`roleDefinitions/${user.accessRole}`).get()).data();
+    const effectivePermissions = resolveRole(user.accessRole, definition);
+    if (effectivePermissions === null)
+      fail("Your assigned dashboard role is inactive or unavailable", 403);
+    const developmentTestLogin = allowAdminTestLogin(user, decoded);
+    if (user.isTestAccount && !developmentTestLogin)
+      fail(
+        "Dashboard test accounts are restricted to explicitly enabled local development.",
+        403,
+      );
     if (
+      !developmentTestLogin &&
       process.env.REQUIRE_ADMIN_MFA !== "false" &&
       user.accessRole === "superadmin" &&
       !decoded.firebase.sign_in_second_factor
@@ -135,6 +193,7 @@ app.use("/api", async (req: Request, _res, next) => {
       conferenceId: user.conferenceId,
       status: user.status,
       authTime: decoded.auth_time,
+      permissions: effectivePermissions,
     };
     next();
   } catch (error) {
@@ -142,6 +201,7 @@ app.use("/api", async (req: Request, _res, next) => {
   }
 });
 app.get("/api/me", (req, res) => res.json(actorOf(req)));
+
 app.use("/api", async (req, _res, next) => {
   try {
     if (
@@ -149,19 +209,106 @@ app.use("/api", async (req, _res, next) => {
       (await db.doc("applicationSettings/main").get()).data()?.maintenanceMode
     )
       fail("The dashboard is temporarily under maintenance", 503);
+    const runtime = await runtimeConfiguration();
+    if (
+      typeof actorOf(req).authTime === "number" &&
+      Date.now() / 1000 - actorOf(req).authTime! >
+        runtime.sessionMaxAgeMinutes * 60
+    )
+      fail("Session age limit reached. Sign out and sign in again.", 401);
+    if (
+      actorOf(req).role !== "superadmin" &&
+      runtime.writesPaused &&
+      req.method !== "GET"
+    )
+      fail("Administrative writes are temporarily paused", 503);
+    if (req.method !== "GET") {
+      if (req.path.startsWith("/imports") && !runtime.importsEnabled)
+        fail("Excel imports are disabled in Control Center", 503);
+      if (req.path === "/media" && !runtime.mediaUploadsEnabled)
+        fail("Media uploads are disabled in Control Center", 503);
+      if (
+        (req.path.startsWith("/email") || req.path === "/users/invite") &&
+        !runtime.emailEnabled
+      )
+        fail("Email operations are disabled in Control Center", 503);
+      if (req.path === "/coupons/redeem" && !runtime.redemptionsEnabled)
+        fail("Meal redemption is disabled in Control Center", 503);
+      if (
+        req.path === "/media" &&
+        Number(req.headers["content-length"] || 0) >
+          runtime.maxUploadMb * 1024 * 1024 + 2048
+      )
+        fail(
+          `Upload exceeds the configured ${runtime.maxUploadMb} MB limit`,
+          413,
+        );
+    }
+    if (
+      req.path.startsWith("/reports") &&
+      !runtime.exportsEnabled &&
+      actorOf(req).role !== "superadmin"
+    )
+      fail("Exports are temporarily disabled", 503);
     next();
   } catch (error) {
     next(error);
   }
 });
+app.use("/api/control", controlRouter);
+registerBrandingAdmin(app, storage);
+app.get("/api/workspace-settings", async (_req, res) => {
+  const config = await runtimeConfiguration();
+  res.json({
+    applicationName: config.applicationName,
+    announcement: config.announcement,
+  });
+});
+app.get("/api/profile", async (req, res) => {
+  requirePermission(req, "self");
+  const [person, conference] = await Promise.all([
+    db.doc(`people/${actorOf(req).email.toLowerCase()}`).get(),
+    db.doc("conference/main").get(),
+  ]);
+  const data = person.data();
+  res.json({
+    profile: data
+      ? Object.fromEntries(
+          [
+            "fullName",
+            "email",
+            "mobile",
+            "affiliation",
+            "registrationId",
+            "registrationStatus",
+            "role",
+            "coupons",
+          ].map((key) => [key, data[key] ?? null]),
+        )
+      : null,
+    schedule: [
+      ...(conference.data()?.schedule || []),
+      ...(data?.personalSchedule || []),
+    ].sort(
+      (a, b) =>
+        String(a.day).localeCompare(String(b.day)) ||
+        String(a.start).localeCompare(String(b.start)),
+    ),
+  });
+});
 app.get("/api/overview", async (req, res) => {
   requirePermission(req, "reports");
-  const [people, redemptions, imports] = await Promise.all([
+  const [people, redemptions, imports, activity] = await Promise.all([
     db.collection("people").get(),
     db.collection("mealRedemptions").count().get(),
     db.collection("importJobs").orderBy("createdAt", "desc").limit(5).get(),
+    can(actorOf(req), "audit", "read")
+      ? db.collection("auditLogs").orderBy("createdAt", "desc").limit(8).get()
+      : Promise.resolve(null),
   ]);
-  const rows = people.docs.map((d) => d.data()).filter((d) => !d.isDemo);
+  const rows = people.docs
+    .map((d) => d.data())
+    .filter((d) => !d.isDemo && !d.archivedAt);
   res.json({
     registrations: rows.length,
     confirmed: rows.filter((p) => p.registrationStatus === "confirmed").length,
@@ -173,6 +320,14 @@ app.get("/api/overview", async (req, res) => {
       ),
     ),
     recentImports: imports.docs.map((d) => ({ id: d.id, ...d.data() })),
+    recentActivity:
+      activity?.docs.map((d) => ({
+        id: d.id,
+        action: d.data().action,
+        actorName: d.data().actorName || "System",
+        target: d.data().target || "Application",
+        createdAt: d.data().createdAt,
+      })) || [],
   });
 });
 app.get("/api/conference", async (req, res) => {
@@ -257,14 +412,12 @@ app.put("/api/settings/smtp", async (req, res) => {
   const { password, clearPassword, ...publicValues } = value;
   const old = await smtpConfiguration();
   const nextPassword = clearPassword ? "" : password || old.password;
-  await db
-    .doc("applicationSettings/smtp")
-    .set({
-      ...publicValues,
-      passwordEncrypted: nextPassword ? encryptSecret(nextPassword) : "",
-      updatedBy: actorOf(req).uid,
-      updatedAt: new Date().toISOString(),
-    });
+  await db.doc("applicationSettings/smtp").set({
+    ...publicValues,
+    passwordEncrypted: nextPassword ? encryptSecret(nextPassword) : "",
+    updatedBy: actorOf(req).uid,
+    updatedAt: new Date().toISOString(),
+  });
   await audit(actorOf(req), "smtp.update", "configuration");
   res.json(await publicSmtpConfiguration());
 });
@@ -285,16 +438,40 @@ app.get("/api/records/:module", async (req, res) => {
     .enum(Object.keys(schemas) as [Module, ...Module[]])
     .parse(req.params.module);
   requirePermission(req, module);
-  const query = db
+  let query = db
     .collection(collectionNames[module])
     .orderBy("__name__")
     .limit(50);
+  if (module === "participants") {
+    if (req.query.role)
+      query = query.where(
+        "role",
+        "==",
+        z.enum(conferenceRoles).parse(req.query.role),
+      );
+    if (req.query.status)
+      query = query.where(
+        "registrationStatus",
+        "==",
+        z
+          .enum(["pending", "confirmed", "cancelled", "suspended"])
+          .parse(req.query.status),
+      );
+  }
   const rows = await (
     req.query.after ? query.startAfter(safeId(req.query.after)) : query
   ).get();
   res.json({
     rows: rows.docs
-      .filter((d) => !d.data().archivedAt)
+      .filter(
+        (d) =>
+          !d.data().archivedAt &&
+          !(
+            module === "participants" &&
+            req.query.excludeDemo === "true" &&
+            d.data().isDemo
+          ),
+      )
       .map((d) => ({ id: d.id, ...d.data() })),
     next: rows.size === 50 ? rows.docs.at(-1)!.id : null,
   });
@@ -323,22 +500,32 @@ app.post("/api/records/:module", async (req, res) => {
   }
   if (module === "users") {
     requireRecentAuthentication(req);
-    const account = await auth
-      .getUserByEmail(String(data.email))
-      .catch(() => null);
-    if (!account)
-      fail(
-        "Create and verify this Firebase Authentication account first, then assign dashboard access.",
-      );
-    id = account.uid;
-    if (input.id && input.id !== id)
-      fail("The email belongs to a different authentication account.");
-    if (
-      id === actor.uid &&
-      (data.status !== "active" || data.accessRole !== actor.role)
-    )
-      fail("You cannot change your own access or deactivate your account.");
-    if (data.status === "disabled") await auth.revokeRefreshTokens(id);
+    const identity = schemas.users.parse(input.data);
+
+    const provisioned = await ensureIdentity(identity.email, identity.fullName);
+
+    let result: { id: string };
+    try {
+      result = await saveDashboardUser(actor, {
+        id: input.id,
+        version: input.version,
+        data: identity,
+      });
+    } catch (error) {
+      if (
+        provisioned.created &&
+        !(await db.doc(`adminUsers/${provisioned.account.uid}`).get()).exists
+      )
+        await auth.deleteUser(provisioned.account.uid);
+      throw error;
+    }
+    res.json({
+      ...result,
+      message: provisioned.created
+        ? "Account and role saved. Send a password reset from Control Center so they can set their own password."
+        : "Account and role saved.",
+    });
+    return;
   }
   if (module === "meals") {
     data.opensAtMs = Date.parse(String(data.opensAt));
@@ -545,7 +732,30 @@ app.post("/api/records/:module", async (req, res) => {
       conferenceId: "main",
     });
   });
-  res.json({ id });
+  if (module === "participants") {
+    try {
+      const identity = {
+        email: String(data.email),
+        fullName: String(data.fullName),
+        mobile: String(data.mobile),
+      };
+      const provisioned = await ensureIdentity(
+        identity.email,
+        identity.fullName,
+      );
+      await ensureParticipantAccess(
+        provisioned.account.uid,
+        identity,
+        actor.uid,
+      );
+    } catch (error) {
+      fail(
+        `Participant saved, but login setup failed: ${(error as Error).message}. Edit this participant and retry login setup.`,
+        503,
+      );
+    }
+  }
+  res.json({ id, message: "Record saved successfully." });
 });
 app.post("/api/records/:module/:id/archive", async (req, res) => {
   const module = z
@@ -555,8 +765,26 @@ app.post("/api/records/:module/:id/archive", async (req, res) => {
   const id = safeId(req.params.id);
   const actor = actorOf(req);
   if (module === "users") requireRecentAuthentication(req);
-  if (module === "users" && id === actor.uid)
-    fail("You cannot deactivate your own account");
+  if (module === "users") {
+    const old = (await db.doc(`adminUsers/${id}`).get()).data();
+    if (!old) fail("Account not found", 404);
+    const data = schemas.users.parse(
+      Object.fromEntries(
+        [
+          "fullName",
+          "email",
+          "mobile",
+          "accessRole",
+          "conferenceId",
+          "status",
+        ].map((key) => [key, key === "status" ? "disabled" : old[key]]),
+      ),
+    );
+    res.json(
+      await saveDashboardUser(actor, { id, version: old.version || 1, data }),
+    );
+    return;
+  }
   const ref = db.doc(`${collectionNames[module]}/${id}`);
   await db.runTransaction(async (tx) => {
     const old = await tx.get(ref);
@@ -577,11 +805,7 @@ app.post("/api/records/:module/:id/archive", async (req, res) => {
       archivedAt: new Date().toISOString(),
       updatedBy: actor.uid,
       version: (old.data()!.version || 1) + 1,
-      ...(module === "participants"
-        ? { registrationStatus: "cancelled" }
-        : module === "users"
-          ? { status: "disabled" }
-          : {}),
+      ...(module === "participants" ? { registrationStatus: "cancelled" } : {}),
     });
     tx.create(db.collection("auditLogs").doc(), {
       actorUid: actor.uid,
@@ -591,7 +815,7 @@ app.post("/api/records/:module/:id/archive", async (req, res) => {
       createdAt: new Date().toISOString(),
     });
   });
-  if (module === "users") await auth.revokeRefreshTokens(id);
+
   res.json({ archived: true });
 });
 app.post("/api/imports/inspect", upload.single("file"), async (req, res) => {
@@ -854,6 +1078,8 @@ app.get("/api/media", async (req, res) => {
 app.post("/api/media", upload.single("file"), async (req, res) => {
   requirePermission(req, "media");
   if (!req.file) fail("Choose an image");
+  if (req.file.size > (await runtimeConfiguration()).maxUploadMb * 1024 * 1024)
+    fail("Image exceeds the configured upload limit", 413);
   const image = sharp(req.file.buffer, { limitInputPixels: 4096 * 4096 });
   const meta = await image.metadata();
   if (
@@ -954,6 +1180,30 @@ app.post("/api/email/templates", async (req, res) => {
   await audit(actorOf(req), "email.template.create", ref.id);
   res.json({ id: ref.id });
 });
+// Adds the built-in role templates that are not already saved (matched by name).
+app.post("/api/email/templates/defaults", async (req, res) => {
+  requirePermission(req, "email");
+  const existing = new Set(
+    (await db.collection("emailTemplates").limit(200).get()).docs.map((d) =>
+      String(d.data().name),
+    ),
+  );
+  const missing = roleTemplates.filter((t) => !existing.has(t.name));
+  const batch = db.batch();
+  for (const { name, subject, body, role } of missing)
+    batch.create(db.collection("emailTemplates").doc(), {
+      name,
+      subject,
+      body,
+      role: role || "all",
+      builtIn: true,
+      createdBy: actorOf(req).uid,
+      createdAt: new Date().toISOString(),
+    });
+  if (missing.length) await batch.commit();
+  await audit(actorOf(req), "email.template.defaults", String(missing.length));
+  res.json({ added: missing.length });
+});
 app.get("/api/email/jobs", async (req, res) => {
   requirePermission(req, "email");
   const snapshot = await db
@@ -975,6 +1225,13 @@ app.post("/api/users/invite", async (req, res) => {
   requirePermission(req, "users");
   requireRecentAuthentication(req);
   const data = schemas.users.parse(req.body);
+  if (
+    resolveRole(
+      data.accessRole,
+      (await db.doc(`roleDefinitions/${data.accessRole}`).get()).data(),
+    ) === null
+  )
+    fail("Choose an active dashboard role");
   if (!(await smtpConfiguration()).host)
     fail("Configure SMTP and start the email worker before inviting accounts");
   const account = await auth.getUserByEmail(data.email).catch(async (error) => {
@@ -982,13 +1239,17 @@ app.post("/api/users/invite", async (req, res) => {
     return auth.createUser({
       email: data.email,
       displayName: data.fullName,
-      emailVerified: false,
+      emailVerified: developmentVerificationBypass(),
     });
   });
   const existing = await db.doc(`adminUsers/${account.uid}`).get();
   if (existing.exists) fail("This account already has dashboard access", 409);
+  if (developmentVerificationBypass() && !account.emailVerified)
+    await auth.updateUser(account.uid, { emailVerified: true });
   const [verification, reset] = await Promise.all([
-    auth.generateEmailVerificationLink(data.email),
+    developmentVerificationBypass()
+      ? Promise.resolve("")
+      : auth.generateEmailVerificationLink(data.email),
     auth.generatePasswordResetLink(data.email),
   ]);
   const batch = db.batch();
@@ -1002,13 +1263,14 @@ app.post("/api/users/invite", async (req, res) => {
     recipient: data.email,
     recipientName: data.fullName,
     subject: "Your CONE dashboard invitation",
-    body: `Hello {{name}},\n\nVerify your email:\n${verification}\n\nSet your password:\n${reset}\n\nSign in at ${process.env.ADMIN_BASE_URL || "http://localhost:3000"}\n\nPrivileged accounts may also require MFA enrollment.`,
+    body: `Hello {{name}},\n\n${verification ? `Verify your email:\n${verification}\n\n` : ""}Set your password:\n${reset}\n\nSign in at ${process.env.ADMIN_BASE_URL || "http://localhost:3000"}\n\nPrivileged accounts may also require MFA enrollment.`,
     status: "queued",
     attempts: 0,
     createdAt: new Date().toISOString(),
     createdBy: actorOf(req).uid,
   });
   await batch.commit();
+  await ensurePerson(data, actorOf(req).uid);
   await audit(actorOf(req), "user.invite", account.uid);
   res.json({ invited: true });
 });
@@ -1028,13 +1290,23 @@ app.post("/api/email/queue", async (req, res) => {
   if (!template) fail("Template not found", 404);
   if (!(await smtpConfiguration()).host)
     fail("Configure SMTP before queuing messages");
+  const conference = (await db.doc("conference/main").get()).data() || {};
   const recipients = await Promise.all(
-    [...new Set(value.recipients)].map(async (email) => {
+    [
+      ...new Set(value.recipients.map((email) => email.trim().toLowerCase())),
+    ].map(async (email) => {
       const person = (
         await db.doc(`people/${email.toLowerCase()}`).get()
       ).data();
       if (!person) fail(`Recipient is not registered: ${email}`);
-      return { email: email.toLowerCase(), name: person.fullName };
+      // Each recipient's own registration fills the template placeholders.
+      const values = personVariables(person, conference);
+      return {
+        email: email.toLowerCase(),
+        name: person.fullName,
+        subject: renderTemplate(template.subject, values),
+        body: renderTemplate(template.body, values),
+      };
     }),
   );
   const ref = db.doc(`emailBatches/${value.requestId}`);
@@ -1044,8 +1316,9 @@ app.post("/api/email/queue", async (req, res) => {
       tx.create(db.collection("emailJobs").doc(), {
         recipient: recipient.email,
         recipientName: recipient.name,
-        subject: template.subject,
-        body: template.body,
+        subject: recipient.subject,
+        body: recipient.body,
+        templateId: value.templateId,
         status: "queued",
         attempts: 0,
         batchId: value.requestId,
@@ -1292,7 +1565,28 @@ app.use(
           .join("; "),
       });
     const err = error as { status?: number; code?: string; message?: string };
-    const status = err.status || (err.code?.startsWith("auth/") ? 401 : 500);
+    if (
+      ["EAUTH", "ECONNECTION", "ESOCKET", "ETIMEDOUT", "EENVELOPE"].includes(
+        err.code || "",
+      )
+    ) {
+      res.status(502).json({
+        error:
+          err.code === "EAUTH"
+            ? "SMTP authentication failed. Check the sender address and app password in SMTP settings."
+            : "Email delivery failed. Check SMTP settings, recipient address and server connectivity.",
+      });
+      return;
+    }
+    const status =
+      err.status ||
+      (err.code === "auth/user-not-found"
+        ? 404
+        : err.code === "auth/email-already-exists"
+          ? 409
+          : err.code?.startsWith("auth/")
+            ? 400
+            : 500);
     if (status === 500) console.error(error);
     res.status(status).json({
       error:
@@ -1302,9 +1596,11 @@ app.use(
     });
   },
 );
+// HOST=0.0.0.0 lets phones on the network reach the mobile OTP endpoints.
+const host = process.env.HOST || "127.0.0.1";
 if (process.env.NODE_ENV !== "test")
-  app.listen(Number(process.env.PORT || 8080), "127.0.0.1", () =>
+  app.listen(Number(process.env.PORT || 8080), host, () =>
     console.log(
-      `CONE API listening on http://127.0.0.1:${process.env.PORT || 8080}`,
+      `CONE API listening on http://${host}:${process.env.PORT || 8080}`,
     ),
   );

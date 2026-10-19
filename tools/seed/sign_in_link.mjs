@@ -1,7 +1,7 @@
 // Prints an email sign-in link for one of the seeded sample accounts, without
 // sending an email. For testing on an emulator/device you control:
 //
-//   node sign_in_link.mjs gauravkumarsony08+speaker@gmail.com
+//   node sign_in_link.mjs speaker@gmail.com
 //   adb shell am start -a android.intent.action.VIEW -d "<link>" com.usstc.usstc_conferenc
 //
 // Uses the same Application Default Credentials as seed.mjs. Refuses any
