@@ -9,6 +9,7 @@ import {
 import "dotenv/config";
 import { allowAdminTestLogin } from "./admin-test-access.js";
 import { registerDevRoleLogin } from "./dev-role-login.js";
+import { registerMobileSelfie, registerSelfieAdmin } from "./selfies.js";
 import {
   controlRouter,
   runtimeConfiguration,
@@ -138,6 +139,7 @@ registerPublicBranding(app, storage);
 registerEmailOtp(app);
 registerTestingVerification(app);
 registerDevRoleLogin(app);
+registerMobileSelfie(app, storage);
 app.use("/api", async (req: Request, _res, next) => {
   try {
     const token = req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];
@@ -257,6 +259,7 @@ app.use("/api", async (req, _res, next) => {
 });
 app.use("/api/control", controlRouter);
 registerBrandingAdmin(app, storage);
+registerSelfieAdmin(app, storage);
 app.get("/api/workspace-settings", async (_req, res) => {
   const config = await runtimeConfiguration();
   res.json({
