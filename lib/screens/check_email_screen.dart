@@ -75,7 +75,7 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
       if (!mounted) return;
       setState(
         () => _message = _challenge != null
-            ? 'If eligible, a new code has been sent.'
+            ? 'A new code has been sent.'
             : 'A new verification link is ready.',
       );
       _startCountdown();
@@ -210,7 +210,9 @@ class _CheckEmailScreenState extends State<CheckEmailScreen> {
             const SizedBox(height: 22),
             if (_challenge != null) ...[
               const Text(
-                'If your details match a registration, a six-digit code will arrive by email. It expires in five minutes.',
+                'We sent a six-digit code to this email. Enter it below to '
+                'sign in. It expires in five minutes; check Spam if it has '
+                'not arrived.',
               ),
               const SizedBox(height: 16),
               TextField(

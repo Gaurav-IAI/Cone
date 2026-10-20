@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/cone_repository.dart';
@@ -33,7 +34,12 @@ class FirebaseAuthService
     String action,
     Map<String, dynamic> body,
   ) async {
-    const base = String.fromEnvironment('AUTH_API_URL');
+    // Debug builds default to the local API, reachable from a USB-connected
+    // phone after `adb reverse tcp:8080 tcp:8080`. Release builds must set it.
+    const base = String.fromEnvironment(
+      'AUTH_API_URL',
+      defaultValue: kReleaseMode ? '' : 'http://127.0.0.1:8080',
+    );
     if (base.isEmpty) {
       throw const AuthFailure('Authentication server is not configured.');
     }

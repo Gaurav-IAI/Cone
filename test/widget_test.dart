@@ -96,6 +96,20 @@ class OtpTestingAuth extends FakeAuthService implements EmailOtpAuthentication {
     LoginDetails details, {
     bool resend = false,
   }) async {
+    // Like the API: details are checked against the registration before a
+    // code is issued.
+    final person = await repository.person(details.email);
+    if (person == null ||
+        !IdentityMatcher.matches(
+          typedName: details.name,
+          typedEmail: details.email,
+          typedMobile: details.mobile,
+          recordName: person.fullName,
+          recordEmail: person.email,
+          recordMobile: person.mobile,
+        )) {
+      throw const AuthFailure('User data not found in system.');
+    }
     requests++;
     return EmailOtpChallenge('challenge-$requests');
   }
@@ -321,6 +335,24 @@ void main() {
       isEmpty,
     );
     expect(h.session.person, isNull);
+  });
+  testWidgets('unknown details show not-found and request no code', (
+    tester,
+  ) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee), mobile: '9000000000');
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(CheckEmailScreen), findsNothing);
+    expect(find.byKey(const Key('loginError')), findsOneWidget);
+    expect(find.text('User data not found in system.'), findsOneWidget);
+    expect((h.auth as OtpTestingAuth).requests, 0);
+    expect(h.session.person, isNull);
+  });
+  testWidgets('OTP screen confirms the code was sent', (tester) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee));
+    expect(find.textContaining('We sent a six-digit code'), findsOneWidget);
+    expect(find.textContaining('If your details match'), findsNothing);
   });
   testWidgets('wrong OTP cannot open a dashboard', (tester) async {
     final h = await pumpApp(tester, otpLogin: true);
