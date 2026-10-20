@@ -166,14 +166,41 @@ describe("email OTP authentication", () => {
     }
     await expect(issue()).rejects.toMatchObject({ status: 429 });
   });
-  it("does not reveal an unknown registration or send email", async () => {
+  it("reports unknown registrations without issuing a code or email", async () => {
     records.clear();
-    const result = await requestEmailOtp(details, "ip");
-    expect(result.message).toContain("If your details match");
+    await expect(requestEmailOtp(details, "ip")).rejects.toMatchObject({
+      status: 404,
+      message: expect.stringContaining("User data not found in system"),
+    });
     expect(m.sendMail).not.toHaveBeenCalled();
+    expect(
+      [...records.keys()].some((k) => k.startsWith("authChallenges/")),
+    ).toBe(false);
+  });
+  it("reports mismatched name or mobile as not found", async () => {
     await expect(
-      verifyEmailOtp({ challengeId: result.challengeId, code: "000000" }),
-    ).rejects.toThrow("Invalid");
+      requestEmailOtp({ ...details, mobile: "9000000000" }, "ip"),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      requestEmailOtp({ ...details, name: "Someone Else" }, "ip"),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(m.sendMail).not.toHaveBeenCalled();
+  });
+  it("lets a corrected request through without an account cooldown", async () => {
+    await expect(
+      requestEmailOtp({ ...details, mobile: "9000000000" }, "ip"),
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(issue()).resolves.toHaveProperty("code");
+  });
+  it("throttles repeated unknown lookups per IP", async () => {
+    records.clear();
+    for (let i = 0; i < 30; i++)
+      await expect(requestEmailOtp(details, "ip")).rejects.toMatchObject({
+        status: 404,
+      });
+    await expect(requestEmailOtp(details, "ip")).rejects.toMatchObject({
+      status: 429,
+    });
   });
   it("rechecks disabled identities before granting access", async () => {
     const challenge = await issue();
@@ -184,7 +211,7 @@ describe("email OTP authentication", () => {
   it("fails closed on delivery failure without queueing raw codes", async () => {
     m.sendMail.mockRejectedValue(new Error("secret transport details"));
     const result = await requestEmailOtp(details, "ip");
-    expect(result.message).toContain("If your details match");
+    expect(result.message).toContain("code has been sent");
     await vi.waitFor(() =>
       expect(records.get(`authChallenges/${result.challengeId}`).status).toBe(
         "delivery_failed",

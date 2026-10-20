@@ -31,6 +31,13 @@ const invalid = () =>
     new Error("Invalid or expired code. Request a new code if needed."),
     { status: 400 },
   );
+const notFound = () =>
+  Object.assign(
+    new Error(
+      "User data not found in system. Check your name, email and mobile number, or contact the organiser.",
+    ),
+    { status: 404 },
+  );
 const normalizedName = (name: string) =>
   name.toLowerCase().replace(/\./g, " ").trim().split(/\s+/).join(" ");
 const ttl = 5 * 60_000;
@@ -49,7 +56,7 @@ function codeHash(id: string, code: string) {
   return digest(`code:${id}:${code}`);
 }
 const timestamp = () => new Date().toISOString();
-async function eligible(identity: z.infer<typeof identitySchema>) {
+export async function eligible(identity: z.infer<typeof identitySchema>) {
   const person = (await db.doc(`people/${identity.email}`).get()).data();
   if (
     !person ||
@@ -95,25 +102,31 @@ export async function requestEmailOtp(body: unknown, ip: string) {
         new Error("Email sign-in is temporarily unavailable."),
         { status: 503 },
       );
-    for (const [snapshot, limit] of [
-      [a, 5],
-      [i, 30],
-    ] as const) {
+    // Unmatched details count only against the IP, so a typo does not start
+    // the per-account cooldown but repeated lookups are still throttled.
+    for (const [snapshot, limit] of account
+      ? ([
+          [a, 5],
+          [i, 30],
+        ] as const)
+      : ([[i, 30]] as const)) {
       const data = snapshot.data();
       if (data && now - data.windowStart < 900_000 && data.count >= limit)
         throw Object.assign(new Error("Too many requests. Try again later."), {
           status: 429,
         });
     }
-    if (a.data()?.lastSentAt && now - a.data()!.lastSentAt < 60_000)
+    if (account && a.data()?.lastSentAt && now - a.data()!.lastSentAt < 60_000)
       throw Object.assign(
         new Error("Wait 60 seconds before requesting another code."),
         { status: 429 },
       );
-    for (const [snapshot, limitRef] of [
-      [a, accountRef],
-      [i, ipRef],
-    ] as const) {
+    for (const [snapshot, limitRef] of account
+      ? ([
+          [a, accountRef],
+          [i, ipRef],
+        ] as const)
+      : ([[i, ipRef]] as const)) {
       const data = snapshot.data();
       tx.set(
         limitRef,
@@ -129,15 +142,16 @@ export async function requestEmailOtp(body: unknown, ip: string) {
       );
     }
     tx.create(db.doc(`auditLogs/${randomUUID()}`), {
-      action: "auth.otp.request",
+      action: account ? "auth.otp.request" : "auth.otp.not_found",
       actorUid: "authentication",
       actorName: "Email sign-in",
-      target: id,
+      target: account ? id : "unmatched-details",
       createdAt: timestamp(),
     });
+    if (!account) return;
     tx.create(ref, {
       ...identity,
-      uid: account?.uid || null,
+      uid: account.uid,
       accountKey: accountRef.id,
       hash: codeHash(id, code),
       attempts: 0,
@@ -147,36 +161,32 @@ export async function requestEmailOtp(body: unknown, ip: string) {
       expiresAtMs: now + ttl,
     });
   });
-  // Return the same public response without exposing SMTP timing or account existence.
-  // Codes remain only in this bounded in-memory delivery task, never in the general queue.
-  if (account) {
-    const deliver = async () => {
-      try {
-        await (
-          await mailTransport()
-        ).sendMail({
-          from: await sender(),
-          to: identity.email,
-          subject: "Your CONE sign-in code",
-          text: `Your CONE sign-in code is ${code}. It expires in 5 minutes. Do not share this code. If you did not request it, ignore this email.`,
-        });
-        await ref.update({ status: "pending" });
-      } catch {
-        await ref.update({ status: "delivery_failed", hash: null });
-      }
-    };
-    void deliver().catch(() =>
-      console.error("OTP delivery status could not be recorded"),
-    );
-  } else {
-    await ref.update({ status: "unavailable" });
-  }
+  if (!account) throw notFound();
+  // The response does not wait for SMTP. Codes remain only in this bounded
+  // in-memory delivery task, never in the general queue.
+  const deliver = async () => {
+    try {
+      await (
+        await mailTransport()
+      ).sendMail({
+        from: await sender(),
+        to: identity.email,
+        subject: "Your CONE sign-in code",
+        text: `Your CONE sign-in code is ${code}. It expires in 5 minutes. Do not share this code. If you did not request it, ignore this email.`,
+      });
+      await ref.update({ status: "pending" });
+    } catch {
+      await ref.update({ status: "delivery_failed", hash: null });
+    }
+  };
+  void deliver().catch(() =>
+    console.error("OTP delivery status could not be recorded"),
+  );
   return {
     challengeId: id,
     expiresInSeconds: 300,
     resendAfterSeconds: 60,
-    message:
-      "If your details match an eligible registration, a code has been sent.",
+    message: "A six-digit code has been sent to your registered email.",
   };
 }
 
