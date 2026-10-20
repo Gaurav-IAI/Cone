@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app/app_config.dart';
 import 'app/app_scope.dart';
 import 'app/app_session.dart';
 import 'app/selfie_store.dart';
@@ -27,8 +28,7 @@ Future<void> main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // Android reads the project settings from android/app/google-services.json.
   await Firebase.initializeApp();
-  if (const String.fromEnvironment('APP_ENV') == 'production' &&
-      !const bool.fromEnvironment('EMAIL_OTP_LOGIN')) {
+  if (AppConfig.isProduction && !AppConfig.emailOtpLogin) {
     throw StateError('Production builds require EMAIL_OTP_LOGIN=true.');
   }
   final repository = FirestoreConeRepository();
@@ -36,12 +36,7 @@ Future<void> main() async {
   runApp(
     ConeApp(
       repository: repository,
-      auth:
-          !const bool.fromEnvironment('EMAIL_OTP_LOGIN') &&
-              const bool.fromEnvironment(
-                'DIRECT_DEMO_LOGIN',
-                defaultValue: true,
-              )
+      auth: !AppConfig.emailOtpLogin && AppConfig.directDemoLogin
           ? DirectDemoAuthService(repository)
           : FirebaseAuthService(repository),
       coupons: FirestoreCouponService(),

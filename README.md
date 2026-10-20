@@ -4,15 +4,16 @@
 > and mobile and taps Continue.
 > - The six fictional demo accounts go straight in, with no email.
 > - Every other registration is emailed a six-digit code to its registered
->   address; entering it opens their screen. This needs the dashboard API
->   running with `OTP_AUTH_ENABLED=true` and `OTP_HMAC_SECRET` (see
->   `admin-dashboard/.env.otp.example`), working SMTP, and Firebase custom-token
->   signing (IAM Service Account Credentials API enabled, or a service-account
->   key in `GOOGLE_APPLICATION_CREDENTIALS`).
+>   address; entering it opens their screen. This needs the admin API (the
+>   separate `cone-admin-dashboard` repository) running with
+>   `OTP_AUTH_ENABLED=true`, working SMTP and Firebase custom-token signing.
 >
-> Build: `flutter build apk --release --dart-define=AUTH_API_URL=https://YOUR-API-HOST`
-> from the Flutter project root. Release APKs need an HTTPS API address the
-> phone can reach (a VPS, or a tunnel to `localhost:8080`).
+> App settings live in `lib/app/app_config.dart`, with defaults embedded so
+> `flutter run` works without flags. Debug builds call the admin API at the
+> development PC's Wi-Fi address set there; change it, or override any value
+> with `--dart-define=NAME=value` or `--dart-define-from-file=config/<name>.json`.
+> Release: `flutter build apk --release --dart-define-from-file=config/production.json`
+> (copy `config/production.example.json` and set the HTTPS API address).
 > First-time setup/refresh: `node tools/seed/setup_direct_demo_login.mjs` with ADC.
 > The generated `assets/testing/demo_login.json` is ignored by Git and contains
 > credentials only for the six fictional demo accounts, never admin credentials.
@@ -29,7 +30,7 @@ A Flutter participant companion app for the *21st Uttarakhand State Science & Te
 
 ## TypeScript admin dashboard
 
-The separate [`admin-dashboard/`](admin-dashboard/README.md) project implements the web administration interface with React, TypeScript, an Express API, Firebase Authentication, and Firestore. See its README for local setup, Super Admin bootstrap, SMTP worker, VPS storage, verification, and integration boundaries. Requirements are in [`DASHBOARD_REQUIREMENTS.md`](DASHBOARD_REQUIREMENTS.md).
+The web administration interface and its API are a separate repository, `cone-admin-dashboard` (default sibling folder `../cone-admin-dashboard`), built with React, TypeScript, an Express API, Firebase Authentication and Firestore. See its README for local setup, Super Admin bootstrap, SMTP worker, VPS storage, verification and integration boundaries. The two projects share only the Firebase project `conferencemanagement-239a3`; this app calls the admin API for email OTP login, selfie upload and the branding logo. Firestore rules for that project are deployed from this repository (`firestore.rules`).
 
 ## Flow
 

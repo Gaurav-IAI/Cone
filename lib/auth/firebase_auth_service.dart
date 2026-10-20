@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../app/app_config.dart';
 import '../data/cone_repository.dart';
 import '../data/models.dart';
 import 'identity_matcher.dart';
@@ -28,24 +28,18 @@ class FirebaseAuthService
     : _auth = auth ?? FirebaseAuth.instance;
 
   @override
-  bool get emailOtpEnabled => const bool.fromEnvironment('EMAIL_OTP_LOGIN');
+  bool get emailOtpEnabled => AppConfig.emailOtpLogin;
 
   Future<Map<String, dynamic>> _otpRequest(
     String action,
     Map<String, dynamic> body,
   ) async {
-    // Debug builds default to the local API, reachable from a USB-connected
-    // phone after `adb reverse tcp:8080 tcp:8080`. Release builds must set it.
-    const base = String.fromEnvironment(
-      'AUTH_API_URL',
-      defaultValue: kReleaseMode ? '' : 'http://127.0.0.1:8080',
-    );
+    const base = AppConfig.authApiUrl;
     if (base.isEmpty) {
       throw const AuthFailure('Authentication server is not configured.');
     }
     final uri = Uri.parse('$base/api/auth/email-otp/$action');
-    if (const String.fromEnvironment('APP_ENV') == 'production' &&
-        uri.scheme != 'https') {
+    if (AppConfig.isProduction && uri.scheme != 'https') {
       throw const AuthFailure('Secure authentication requires HTTPS.');
     }
     final client = HttpClient()
@@ -129,15 +123,10 @@ class FirebaseAuthService
   }
 
   @override
-  bool get testingVerificationEnabled => const bool.fromEnvironment(
-    'IN_APP_EMAIL_VERIFICATION',
-    defaultValue: true,
-  );
+  bool get testingVerificationEnabled => AppConfig.inAppEmailVerification;
   @override
   Uri? testingVerificationLink;
-  static const _testingApi = String.fromEnvironment(
-    'TEST_VERIFICATION_API_URL',
-  );
+  static const _testingApi = AppConfig.testVerificationApiUrl;
 
   Future<Map<String, dynamic>> _testRequest(
     String path,
@@ -181,7 +170,7 @@ class FirebaseAuthService
   bool get automaticEmailVerificationEnabled =>
       !emailOtpEnabled &&
       testingVerificationEnabled &&
-      const bool.fromEnvironment('AUTO_VERIFY_EMAIL', defaultValue: true);
+      AppConfig.autoVerifyEmail;
 
   @override
   Future<SignInState> continueWithoutVerification(LoginDetails details) async {
@@ -218,8 +207,8 @@ class FirebaseAuthService
     }
   }
 
-  static const _projectDomain = 'conferencemanagement-239a3.firebaseapp.com';
-  static const _packageName = 'com.usstc.usstc_conferenc';
+  static const _projectDomain = AppConfig.firebaseProjectDomain;
+  static const _packageName = AppConfig.androidPackageName;
   static const _pendingEmail = 'pendingSignInEmail';
   static const _pendingName = 'pendingSignInName';
   static const _pendingMobile = 'pendingSignInMobile';

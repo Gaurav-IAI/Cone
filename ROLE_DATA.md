@@ -58,10 +58,10 @@ When a role changes, the old role's data (paper, talk, host, duties) is removed 
 ## Adding or changing people
 
 - **Dashboard:** use Participants, Submissions, Staff, Meals → Issue coupons.
-- **In bulk from a file:** put the people in a JSON file under `admin-dashboard/storage/`. That folder is ignored by Git, so personal data stays out of the repository. Then run:
+- **In bulk from a file:** in the separate `cone-admin-dashboard` repository, put the people in a JSON file under `storage/`. That folder is ignored by Git, so personal data stays out of the repository. Then run:
 
   ```powershell
-  cd admin-dashboard
+  cd ../cone-admin-dashboard
   npm run provision:people -- storage/test-people.json --dry-run   # preview
   npm run provision:people -- storage/test-people.json
   ```
