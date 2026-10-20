@@ -1,0 +1,8 @@
+{
+  "APP_ENV": "production",
+  "AUTH_API_URL": "https://api.your-domain.example",
+  "EMAIL_OTP_LOGIN": "true",
+  "DIRECT_DEMO_LOGIN": "false",
+  "IN_APP_EMAIL_VERIFICATION": "false",
+  "AUTO_VERIFY_EMAIL": "false"
+}

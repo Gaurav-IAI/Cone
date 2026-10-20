@@ -1,0 +1,5 @@
+{
+  "AUTH_API_URL": "http://172.16.9.197:8080",
+  "DIRECT_DEMO_LOGIN": "true",
+  "EMAIL_OTP_LOGIN": "false"
+}

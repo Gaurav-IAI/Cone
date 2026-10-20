@@ -1,0 +1,1366 @@
+{
+  "schemaVersion": 2,
+  "isDemo": true,
+  "notice": "SAMPLE DATA. In-app verification test accounts only.",
+  "source": {
+    "workbook": "USSTC 21 Final116 (1).xlsx",
+    "workbookSha256": "6ed30dbf5883fcdeb488654c0712b9a463d521d158d2844d32a35282a198dfde",
+    "sheetsUsed": [
+      "MAIN",
+      "Computer Sciences including Art"
+    ],
+    "note": "Conference title, disciplines, category codes, presentation types and summary totals are copied from the MAIN sheet. The demo participant follows the column structure of the discipline sheets; personal values are fictional. No real participant record is included."
+  },
+  "fieldMap": {
+    "discipline": "Discipline",
+    "category": "CT.",
+    "presentationType": "O/P",
+    "title": "Title of Abstract",
+    "fullName": "Name of Author(S)",
+    "affiliation": "Organizational Affiliation",
+    "email": "Email Address",
+    "registrationFee": "Registration Fee",
+    "workingAs": "Working as",
+    "softCopy": "Soft Copy",
+    "district": "District",
+    "accommodation": "ACCO",
+    "feesReceived": "Fees Received",
+    "mobile": "Mobile",
+    "earlierAwardee": "Earlier Awarded"
+  },
+  "conference": {
+    "name": "21st Uttarakhand State Science & Technology Congress 2026-27",
+    "nameSource": "MAIN!A1",
+    "shortName": "USSTC 2026-27",
+    "notInWorkbook": [
+      "Conference dates",
+      "Venue and halls",
+      "Organiser contact details",
+      "Session schedule",
+      "Meal arrangements"
+    ],
+    "categories": [
+      "I",
+      "II",
+      "III",
+      "IV"
+    ],
+    "categoryNote": "The workbook uses category codes I-IV (column CT.) but does not define what they mean.",
+    "presentationTypes": {
+      "O": "Oral",
+      "P": "Poster"
+    },
+    "totals": {
+      "oral": 189,
+      "poster": 68,
+      "abstracts": 257,
+      "source": "MAIN sheet, TOTAL row"
+    },
+    "disciplines": [
+      {
+        "srNo": 1,
+        "name": "Agriculture Sciences, Botany, Environmental Science and Forestry",
+        "oral": 46,
+        "poster": 19,
+        "abstracts": 65
+      },
+      {
+        "srNo": 2,
+        "name": "Biotechnology, Biochemistry and Micro-Biology",
+        "oral": 24,
+        "poster": 8,
+        "abstracts": 32
+      },
+      {
+        "srNo": 3,
+        "name": "Chemical Sciences",
+        "oral": 24,
+        "poster": 11,
+        "abstracts": 35
+      },
+      {
+        "srNo": 4,
+        "name": "Earth Sciences including Geology, Geo-morphology, Geo-physics, Glaciology, Geography",
+        "oral": 10,
+        "poster": 0,
+        "abstracts": 10
+      },
+      {
+        "srNo": 5,
+        "name": "Engineering Sciences, Material Science and Nano Technology",
+        "oral": 10,
+        "poster": 4,
+        "abstracts": 14
+      },
+      {
+        "srNo": 6,
+        "name": "Home Science, Health and Nutrition",
+        "oral": 8,
+        "poster": 0,
+        "abstracts": 8
+      },
+      {
+        "srNo": 7,
+        "name": "Mathematics and Statistics/ Mathematical Sciences",
+        "oral": 9,
+        "poster": 1,
+        "abstracts": 10
+      },
+      {
+        "srNo": 8,
+        "name": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+        "oral": 7,
+        "poster": 2,
+        "abstracts": 9
+      },
+      {
+        "srNo": 9,
+        "name": "Medical / Pharmaceutical Sciences",
+        "oral": 12,
+        "poster": 7,
+        "abstracts": 19
+      },
+      {
+        "srNo": 10,
+        "name": "Physical Sciences",
+        "oral": 8,
+        "poster": 4,
+        "abstracts": 12
+      },
+      {
+        "srNo": 11,
+        "name": "Rural Sciences and Science & Society (including drudgery reduction leveraging Technologies)",
+        "oral": 10,
+        "poster": 3,
+        "abstracts": 13
+      },
+      {
+        "srNo": 12,
+        "name": "Zoology, Veterinary Science and Animal Husbandry",
+        "oral": 17,
+        "poster": 8,
+        "abstracts": 25
+      },
+      {
+        "srNo": 13,
+        "name": "Innovator of the Year",
+        "oral": 4,
+        "poster": 1,
+        "abstracts": 5
+      }
+    ],
+    "schedule": [
+      {
+        "day": "Day 1",
+        "start": "09:00",
+        "end": "10:00",
+        "title": "Registration and kit collection",
+        "venue": "Registration desk",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "10:00",
+        "end": "11:30",
+        "title": "Inaugural session",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "11:45",
+        "end": "13:00",
+        "title": "Plenary lecture",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 1",
+        "start": "14:00",
+        "end": "17:00",
+        "title": "Technical session: Computer Sciences (Oral)",
+        "venue": "Hall B",
+        "kind": "session",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 2",
+        "start": "10:00",
+        "end": "13:00",
+        "title": "Poster sessions (all disciplines)",
+        "venue": "Exhibition area",
+        "kind": "session",
+        "isOwnPresentation": false
+      },
+      {
+        "day": "Day 2",
+        "start": "15:00",
+        "end": "16:30",
+        "title": "Valedictory session and awards",
+        "venue": "Main hall",
+        "kind": "general",
+        "isOwnPresentation": false
+      }
+    ]
+  },
+  "people": [
+    {
+      "isDemo": true,
+      "fictionalFields": [
+        "registrationId",
+        "passId",
+        "fullName",
+        "mobile",
+        "affiliation",
+        "feesReceived",
+        "paper.submissionId",
+        "paper.title",
+        "paper.abstractText",
+        "paper.authors",
+        "schedule",
+        "foodCoupons"
+      ],
+      "registrationId": "TEST-PARTICIPANT-1",
+      "passId": "TEST-PASS-PARTICIPANT-1",
+      "registrationStatus": "Registered",
+      "fullName": "Test Participant 1",
+      "email": "participant1@participant.com",
+      "mobile": "9000000001",
+      "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+      "workingAs": "Ph.D Scholar",
+      "district": "DN",
+      "discipline": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+      "disciplineShort": "Computer Sciences",
+      "category": "I",
+      "presentationType": "O",
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004521",
+      "softCopy": "Yes",
+      "accommodation": "No",
+      "earlierAwardee": "No",
+      "paper": {
+        "submissionId": "USSTC26-ABS-0142",
+        "title": "Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+        "abstractText": "Landslides cause recurring loss of life and property in the hill districts of Uttarakhand, particularly during the monsoon. This study presents a low-cost early warning network built from soil-moisture, tilt and rain-gauge sensors connected over LoRaWAN to a cloud dashboard. A pilot of twelve sensor nodes was installed on two slopes with a history of slope failure. A threshold model combining cumulative rainfall and pore-water indicators raised alerts on average 40 minutes before observed slope movement, with a hardware cost below INR 6,000 per node. The results suggest that community-maintained sensor networks can complement regional forecasting and support timely evacuation in remote villages.",
+        "abstractNote": null,
+        "authors": [
+          {
+            "name": "Aarav Mehra",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Presenting author",
+            "isParticipant": true
+          },
+          {
+            "name": "Kavya Joshi",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author",
+            "isParticipant": false
+          },
+          {
+            "name": "Dr. Tanvir Saklani",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author (supervisor)",
+            "isParticipant": false
+          }
+        ],
+        "authorsNote": null
+      },
+      "role": "presenter",
+      "designation": null,
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "14:30",
+          "end": "14:45",
+          "title": "Your oral presentation: Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+          "venue": "Hall B",
+          "kind": "presentation",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-1-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "talk": null,
+      "duties": [],
+      "host": null,
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "fictionalFields": [
+        "registrationId",
+        "passId",
+        "fullName",
+        "mobile",
+        "affiliation",
+        "feesReceived",
+        "paper.submissionId",
+        "paper.title",
+        "paper.abstractText",
+        "paper.authors",
+        "schedule",
+        "foodCoupons"
+      ],
+      "registrationId": "TEST-PARTICIPANT-2",
+      "passId": "TEST-PASS-PARTICIPANT-2",
+      "registrationStatus": "Registered",
+      "fullName": "Test Participant 2",
+      "email": "participant2@participant.com",
+      "mobile": "9000000002",
+      "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+      "workingAs": "Ph.D Scholar",
+      "district": "DN",
+      "discipline": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+      "disciplineShort": "Computer Sciences",
+      "category": "I",
+      "presentationType": "O",
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004521",
+      "softCopy": "Yes",
+      "accommodation": "No",
+      "earlierAwardee": "No",
+      "paper": {
+        "submissionId": "USSTC26-ABS-0142",
+        "title": "Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+        "abstractText": "Landslides cause recurring loss of life and property in the hill districts of Uttarakhand, particularly during the monsoon. This study presents a low-cost early warning network built from soil-moisture, tilt and rain-gauge sensors connected over LoRaWAN to a cloud dashboard. A pilot of twelve sensor nodes was installed on two slopes with a history of slope failure. A threshold model combining cumulative rainfall and pore-water indicators raised alerts on average 40 minutes before observed slope movement, with a hardware cost below INR 6,000 per node. The results suggest that community-maintained sensor networks can complement regional forecasting and support timely evacuation in remote villages.",
+        "abstractNote": null,
+        "authors": [
+          {
+            "name": "Aarav Mehra",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Presenting author",
+            "isParticipant": true
+          },
+          {
+            "name": "Kavya Joshi",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author",
+            "isParticipant": false
+          },
+          {
+            "name": "Dr. Tanvir Saklani",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author (supervisor)",
+            "isParticipant": false
+          }
+        ],
+        "authorsNote": null
+      },
+      "role": "presenter",
+      "designation": null,
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "14:30",
+          "end": "14:45",
+          "title": "Your oral presentation: Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+          "venue": "Hall B",
+          "kind": "presentation",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-2-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "talk": null,
+      "duties": [],
+      "host": null,
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "fictionalFields": [
+        "registrationId",
+        "passId",
+        "fullName",
+        "mobile",
+        "affiliation",
+        "feesReceived",
+        "paper.submissionId",
+        "paper.title",
+        "paper.abstractText",
+        "paper.authors",
+        "schedule",
+        "foodCoupons"
+      ],
+      "registrationId": "TEST-PARTICIPANT-3",
+      "passId": "TEST-PASS-PARTICIPANT-3",
+      "registrationStatus": "Registered",
+      "fullName": "Test Participant 3",
+      "email": "participant3@participant.com",
+      "mobile": "9000000003",
+      "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+      "workingAs": "Ph.D Scholar",
+      "district": "DN",
+      "discipline": "Computer Sciences including Artificial Intelligence. STEM ,Cyber Physical Sciences, robotics, Block Chain, Cyber Security , STI, Quantum and Cloud computing",
+      "disciplineShort": "Computer Sciences",
+      "category": "I",
+      "presentationType": "O",
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004521",
+      "softCopy": "Yes",
+      "accommodation": "No",
+      "earlierAwardee": "No",
+      "paper": {
+        "submissionId": "USSTC26-ABS-0142",
+        "title": "Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+        "abstractText": "Landslides cause recurring loss of life and property in the hill districts of Uttarakhand, particularly during the monsoon. This study presents a low-cost early warning network built from soil-moisture, tilt and rain-gauge sensors connected over LoRaWAN to a cloud dashboard. A pilot of twelve sensor nodes was installed on two slopes with a history of slope failure. A threshold model combining cumulative rainfall and pore-water indicators raised alerts on average 40 minutes before observed slope movement, with a hardware cost below INR 6,000 per node. The results suggest that community-maintained sensor networks can complement regional forecasting and support timely evacuation in remote villages.",
+        "abstractNote": null,
+        "authors": [
+          {
+            "name": "Aarav Mehra",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Presenting author",
+            "isParticipant": true
+          },
+          {
+            "name": "Kavya Joshi",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author",
+            "isParticipant": false
+          },
+          {
+            "name": "Dr. Tanvir Saklani",
+            "affiliation": "Department of Computer Science, Alakananda Institute of Technology, Dehradun",
+            "role": "Co-author (supervisor)",
+            "isParticipant": false
+          }
+        ],
+        "authorsNote": null
+      },
+      "role": "presenter",
+      "designation": null,
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "14:30",
+          "end": "14:45",
+          "title": "Your oral presentation: Low-Cost IoT Sensor Network for Early Landslide Warning in Uttarakhand Hill Districts",
+          "venue": "Hall B",
+          "kind": "presentation",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-PARTICIPANT-3-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "talk": null,
+      "duties": [],
+      "host": null,
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": "DN",
+      "workingAs": "Student",
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004988",
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [],
+      "role": "attendee",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ATTENDEE-1",
+      "passId": "TEST-PASS-ATTENDEE-1",
+      "fullName": "Test Attendee 1",
+      "email": "attendee1@attendee.com",
+      "mobile": "9000000004",
+      "affiliation": "Department of Environmental Science, Alakananda Institute of Technology, Dehradun",
+      "designation": "M.Sc. Student",
+      "personalSchedule": [],
+      "coupons": [
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-1-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": "DN",
+      "workingAs": "Student",
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004988",
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [],
+      "role": "attendee",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ATTENDEE-2",
+      "passId": "TEST-PASS-ATTENDEE-2",
+      "fullName": "Test Attendee 2",
+      "email": "attendee2@attendee.com",
+      "mobile": "9000000005",
+      "affiliation": "Department of Environmental Science, Alakananda Institute of Technology, Dehradun",
+      "designation": "M.Sc. Student",
+      "personalSchedule": [],
+      "coupons": [
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-2-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": "DN",
+      "workingAs": "Student",
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": 500,
+      "feesReceived": "UPI-2026-004988",
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [],
+      "role": "attendee",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ATTENDEE-3",
+      "passId": "TEST-PASS-ATTENDEE-3",
+      "fullName": "Test Attendee 3",
+      "email": "attendee3@attendee.com",
+      "mobile": "9000000006",
+      "affiliation": "Department of Environmental Science, Alakananda Institute of Technology, Dehradun",
+      "designation": "M.Sc. Student",
+      "personalSchedule": [],
+      "coupons": [
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ATTENDEE-3-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Meal desk \u00e2\u20ac\u201d Dining hall",
+        "Registration desk support (Day 1 morning)"
+      ],
+      "role": "volunteer",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-VOLUNTEER-1",
+      "passId": "TEST-PASS-VOLUNTEER-1",
+      "fullName": "Test Volunteer 1",
+      "email": "volunteer1@volunteer.com",
+      "mobile": "9000000007",
+      "affiliation": "Student volunteer",
+      "designation": "Meal desk volunteer",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "07:45",
+          "end": "09:30",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Breakfast",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 2",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-1-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Meal desk \u00e2\u20ac\u201d Dining hall",
+        "Registration desk support (Day 1 morning)"
+      ],
+      "role": "volunteer",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-VOLUNTEER-2",
+      "passId": "TEST-PASS-VOLUNTEER-2",
+      "fullName": "Test Volunteer 2",
+      "email": "volunteer2@volunteer.com",
+      "mobile": "9000000008",
+      "affiliation": "Student volunteer",
+      "designation": "Meal desk volunteer",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "07:45",
+          "end": "09:30",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Breakfast",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 2",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-2-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Meal desk \u00e2\u20ac\u201d Dining hall",
+        "Registration desk support (Day 1 morning)"
+      ],
+      "role": "volunteer",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-VOLUNTEER-3",
+      "passId": "TEST-PASS-VOLUNTEER-3",
+      "fullName": "Test Volunteer 3",
+      "email": "volunteer3@volunteer.com",
+      "mobile": "9000000009",
+      "affiliation": "Student volunteer",
+      "designation": "Meal desk volunteer",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "07:45",
+          "end": "09:30",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Breakfast",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 2",
+          "start": "12:45",
+          "end": "14:15",
+          "title": "Meal desk duty \u00e2\u20ac\u201d Lunch",
+          "venue": "Dining hall",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-VOLUNTEER-3-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Overall coordination",
+        "Host for Guest of Honour",
+        "Meal desk supervision"
+      ],
+      "role": "organiser",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ORGANIZER-1",
+      "passId": "TEST-PASS-ORGANIZER-1",
+      "fullName": "Test Organizer 1",
+      "email": "organizer1@organizer.com",
+      "mobile": "9000000010",
+      "affiliation": "Organising Committee, USSTC 2026-27",
+      "designation": "Conference coordinator",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "08:00",
+          "end": "08:45",
+          "title": "Organising committee briefing",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "18:00",
+          "end": "18:30",
+          "title": "Day 1 review meeting",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-1-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Overall coordination",
+        "Host for Guest of Honour",
+        "Meal desk supervision"
+      ],
+      "role": "organiser",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ORGANIZER-2",
+      "passId": "TEST-PASS-ORGANIZER-2",
+      "fullName": "Test Organizer 2",
+      "email": "organizer2@organizer.com",
+      "mobile": "9000000011",
+      "affiliation": "Organising Committee, USSTC 2026-27",
+      "designation": "Conference coordinator",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "08:00",
+          "end": "08:45",
+          "title": "Organising committee briefing",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "18:00",
+          "end": "18:30",
+          "title": "Day 1 review meeting",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-2-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    },
+    {
+      "isDemo": true,
+      "registrationStatus": "Registered",
+      "district": null,
+      "workingAs": null,
+      "discipline": null,
+      "disciplineShort": null,
+      "category": null,
+      "presentationType": null,
+      "registrationFee": null,
+      "feesReceived": null,
+      "softCopy": null,
+      "accommodation": null,
+      "earlierAwardee": null,
+      "paper": null,
+      "talk": null,
+      "host": null,
+      "duties": [
+        "Overall coordination",
+        "Host for Guest of Honour",
+        "Meal desk supervision"
+      ],
+      "role": "organiser",
+      "fictionalFields": [
+        "all"
+      ],
+      "registrationId": "TEST-ORGANIZER-3",
+      "passId": "TEST-PASS-ORGANIZER-3",
+      "fullName": "Test Organizer 3",
+      "email": "organizer3@organizer.com",
+      "mobile": "9000000012",
+      "affiliation": "Organising Committee, USSTC 2026-27",
+      "designation": "Conference coordinator",
+      "personalSchedule": [
+        {
+          "day": "Day 1",
+          "start": "08:00",
+          "end": "08:45",
+          "title": "Organising committee briefing",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        },
+        {
+          "day": "Day 1",
+          "start": "18:00",
+          "end": "18:30",
+          "title": "Day 1 review meeting",
+          "venue": "Committee room",
+          "kind": "personal",
+          "isOwnPresentation": true
+        }
+      ],
+      "coupons": [
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-1",
+          "day": "Day 1",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-2",
+          "day": "Day 1",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-3",
+          "day": "Day 1",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-4",
+          "day": "Day 2",
+          "meal": "Breakfast",
+          "window": "08:00 - 09:30"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-5",
+          "day": "Day 2",
+          "meal": "Lunch",
+          "window": "13:00 - 14:00"
+        },
+        {
+          "couponId": "TEST-ORGANIZER-3-MEAL-6",
+          "day": "Day 2",
+          "meal": "Dinner",
+          "window": "20:00 - 21:30"
+        }
+      ],
+      "emailVerified": false,
+      "emailVerificationStatus": "Pending"
+    }
+  ]
+}

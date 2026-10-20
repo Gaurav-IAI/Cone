@@ -1,3 +1,4 @@
+import 'app/branding.dart';
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
@@ -5,11 +6,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app/app_config.dart';
 import 'app/app_scope.dart';
 import 'app/app_session.dart';
 import 'app/selfie_store.dart';
 import 'app/theme.dart';
 import 'auth/firebase_auth_service.dart';
+import 'auth/direct_demo_auth_service.dart';
 import 'auth/participant_auth_service.dart';
 import 'coupons/coupon_service.dart';
 import 'coupons/firestore_coupon_service.dart';
@@ -25,12 +28,17 @@ Future<void> main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // Android reads the project settings from android/app/google-services.json.
   await Firebase.initializeApp();
+  if (AppConfig.isProduction && !AppConfig.emailOtpLogin) {
+    throw StateError('Production builds require EMAIL_OTP_LOGIN=true.');
+  }
   final repository = FirestoreConeRepository();
   final links = AppLinks();
   runApp(
     ConeApp(
       repository: repository,
-      auth: FirebaseAuthService(repository),
+      auth: !AppConfig.emailOtpLogin && AppConfig.directDemoLogin
+          ? DirectDemoAuthService(repository)
+          : FirebaseAuthService(repository),
       coupons: FirestoreCouponService(),
       selfies: LocalSelfieStore(),
       session: AppSession(),
@@ -73,10 +81,14 @@ class _ConeAppState extends State<ConeApp> {
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   StreamSubscription<Uri>? _linkSub;
   bool _handlingLink = false;
+  Stream<AppBranding>? _brandingStream;
 
   @override
   void initState() {
     super.initState();
+    if (widget.repository is BrandingSource) {
+      _brandingStream = (widget.repository as BrandingSource).watchBranding();
+    }
     _linkSub = widget.incomingLinks?.listen(_handleLink);
     widget.initialLink?.then((uri) {
       if (uri != null) _handleLink(uri);
@@ -142,24 +154,34 @@ class _ConeAppState extends State<ConeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScope(
-      repository: widget.repository,
-      auth: widget.auth,
-      coupons: widget.coupons,
-      selfies: widget.selfies,
-      session: widget.session,
-      // Rebuilds the theme when the signed-in role changes.
-      child: ListenableBuilder(
-        listenable: widget.session,
-        builder: (context, _) => MaterialApp(
-          title: 'CONE',
-          navigatorKey: _navigator,
-          scaffoldMessengerKey: _messenger,
-          debugShowCheckedModeBanner: false,
-          theme: buildAppTheme(role: widget.session.role),
-          home: const _StartGate(),
-        ),
-      ),
+    return StreamBuilder<AppBranding>(
+      stream: _brandingStream,
+      initialData: const AppBranding(),
+      builder: (context, snapshot) {
+        final branding = snapshot.data ?? const AppBranding();
+        return BrandingScope(
+          branding: branding,
+          child: AppScope(
+            repository: widget.repository,
+            auth: widget.auth,
+            coupons: widget.coupons,
+            selfies: widget.selfies,
+            session: widget.session,
+            // Rebuilds the theme when the signed-in role changes.
+            child: ListenableBuilder(
+              listenable: widget.session,
+              builder: (context, _) => MaterialApp(
+                title: branding.applicationName,
+                navigatorKey: _navigator,
+                scaffoldMessengerKey: _messenger,
+                debugShowCheckedModeBanner: false,
+                theme: buildAppTheme(role: widget.session.role),
+                home: const _StartGate(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -139,7 +139,7 @@ class FakeCouponService implements CouponService {
     if (current != null && current.used) return AlreadyUsed(current);
     _status[id] = CouponStatus.used(
       usedAt: DateTime(2026, 10, 23, 13, 5),
-      usedBy: 'gauravkumarsony08+volunteer@gmail.com',
+      usedBy: 'volunteer@gmail.com',
     );
     repository.meals++;
     _changes.add(id);

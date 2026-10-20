@@ -52,7 +52,7 @@ class ConferenceInfoScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const SectionCard(
+          SectionCard(
             title: 'ABOUT THE APP',
             child: Row(
               children: [
@@ -63,7 +63,7 @@ class ConferenceInfoScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'CONE',
+                        appName(context),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,

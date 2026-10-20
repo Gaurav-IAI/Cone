@@ -1,3 +1,5 @@
+import '../app/branding.dart';
+export '../app/branding.dart' show appName;
 import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
@@ -11,31 +13,45 @@ class ConeLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final branding = BrandingScope.of(context);
+    Widget fallback() => branding.applicationName == 'CONE'
+        ? Image.asset(
+            'assets/images/cone_logo.png',
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => _initial(branding.applicationName),
+          )
+        : _initial(branding.applicationName);
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.16),
-      child: Image.asset(
-        'assets/images/cone_logo.png',
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        semanticLabel: 'CONE logo',
-        errorBuilder: (_, _, _) => Container(
-          width: size,
-          height: size,
-          color: AppColors.navy,
-          alignment: Alignment.center,
-          child: Text(
-            'CONE',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: size * 0.24,
-            ),
-          ),
-        ),
-      ),
+      child: branding.logoUrl != null
+          ? Image.network(
+              branding.logoUrl!,
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+              semanticLabel: '${branding.applicationName} logo',
+              errorBuilder: (_, _, _) => fallback(),
+            )
+          : fallback(),
     );
   }
+
+  Widget _initial(String name) => Container(
+    width: size,
+    height: size,
+    color: AppColors.navy,
+    alignment: Alignment.center,
+    child: Text(
+      name.substring(0, 1).toUpperCase(),
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w800,
+        fontSize: size * .4,
+      ),
+    ),
+  );
 }
 
 /// The abbreviation's expansion, shown wherever the app is introduced.

@@ -48,3 +48,7 @@ app.*.map.json
 *.xlsx
 google-services.json
 GoogleService-Info.plist
+
+# Local-only credentials for the six fictional test accounts; never admin keys.
+/assets/testing/demo_login.json
+*.zip

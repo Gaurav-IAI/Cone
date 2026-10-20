@@ -30,27 +30,16 @@ void main() {
             typedEmail: email,
             typedMobile: mobile,
             recordName: 'Prof. Nandini Rautela',
-            recordEmail: 'gauravkumarsony08+speaker@gmail.com',
+            recordEmail: 'speaker@gmail.com',
             recordMobile: '9876543212',
           );
       expect(
-        match(
-          'prof nandini rautela',
-          'GauravKumarSony08+Speaker@gmail.com',
-          '+91 98765 43212',
-        ),
+        match('prof nandini rautela', 'Speaker@GMAIL.COM', '+91 98765 43212'),
         isTrue,
       );
+      expect(match('Nandini', 'speaker@gmail.com', '9876543212'), isFalse);
       expect(
-        match('Nandini', 'gauravkumarsony08+speaker@gmail.com', '9876543212'),
-        isFalse,
-      );
-      expect(
-        match(
-          'Prof. Nandini Rautela',
-          'gauravkumarsony08+speaker@gmail.com',
-          '9876543210',
-        ),
+        match('Prof. Nandini Rautela', 'speaker@gmail.com', '9876543210'),
         isFalse,
       );
     });

@@ -76,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         titleSpacing: 16,
         toolbarHeight: 68,
-        title: const Row(
+        title: Row(
           children: [
             ConeLogo(size: 48),
             SizedBox(width: 12),
@@ -85,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('CONE'),
+                  Text(appName(context)),
                   Text(
                     coneFullName,
                     maxLines: 2,

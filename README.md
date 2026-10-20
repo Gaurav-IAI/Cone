@@ -1,12 +1,36 @@
 # CONE — Conference Operations & Networking Environment
 
+> **Current login (no passwords):** everyone enters their registered name, email
+> and mobile and taps Continue.
+> - The six fictional demo accounts go straight in, with no email.
+> - Every other registration is emailed a six-digit code to its registered
+>   address; entering it opens their screen. This needs the admin API (the
+>   separate `cone-admin-dashboard` repository) running with
+>   `OTP_AUTH_ENABLED=true`, working SMTP and Firebase custom-token signing.
+>
+> App settings live in `lib/app/app_config.dart`, with defaults embedded so
+> `flutter run` works without flags. Debug builds call the admin API at the
+> development PC's Wi-Fi address set there; change it, or override any value
+> with `--dart-define=NAME=value` or `--dart-define-from-file=config/<name>.json`.
+> Release: `flutter build apk --release --dart-define-from-file=config/production.json`
+> (copy `config/production.example.json` and set the HTTPS API address).
+> First-time setup/refresh: `node tools/seed/setup_direct_demo_login.mjs` with ADC.
+> The generated `assets/testing/demo_login.json` is ignored by Git and contains
+> credentials only for the six fictional demo accounts, never admin credentials.
+> These demo credentials are bundled into the testing APK and are extractable;
+> this is deliberately a demo-only build. Disable it with
+> `--dart-define=DIRECT_DEMO_LOGIN=false` before restoring other login modes.
+> Previous API/verification setup sections below describe retained alternatives
+> and are not required for the current direct-login testing flow.
+
+
 A Flutter participant companion app for the *21st Uttarakhand State Science & Technology Congress 2026-27*. A registered participant signs in with an emailed link, takes a selfie that stays on the device, and views a read-only dashboard with scannable meal coupons. Volunteers scan and serve coupons.
 
 > Six fictional sample people (one per role) live in Firebase, loaded from `tools/seed/seed_data.json`. Sign-in is real Firebase email-link sign-in; meal coupons are redeemed in Cloud Firestore. The QR **pass** is not yet connected to any entry system.
 
 ## TypeScript admin dashboard
 
-The separate [`admin-dashboard/`](admin-dashboard/README.md) project implements the web administration interface with React, TypeScript, an Express API, Firebase Authentication, and Firestore. See its README for local setup, Super Admin bootstrap, SMTP worker, VPS storage, verification, and integration boundaries. Requirements are in [`DASHBOARD_REQUIREMENTS.md`](DASHBOARD_REQUIREMENTS.md).
+The web administration interface and its API are a separate repository, `cone-admin-dashboard` (default sibling folder `../cone-admin-dashboard`), built with React, TypeScript, an Express API, Firebase Authentication and Firestore. See its README for local setup, Super Admin bootstrap, SMTP worker, VPS storage, verification and integration boundaries. The two projects share only the Firebase project `conferencemanagement-239a3`; this app calls the admin API for email OTP login, selfie upload and the branding logo. Firestore rules for that project are deployed from this repository (`firestore.rules`).
 
 ## Flow
 
@@ -27,16 +51,16 @@ Every role has a QR pass (encodes only the pass ID) and six meal coupons (breakf
 
 ## Sample accounts
 
-All are fictional people. The emails are Gmail "+" aliases, so every sign-in link arrives in the gauravkumarsony08@gmail.com inbox.
+All are fictional people. These role-based addresses are testing identifiers; the in-app testing flow does not send email.
 
 | Role | Name | Email | Mobile |
 |---|---|---|---|
-| Presenter | Aarav Mehra | gauravkumarsony08@gmail.com | 9876543210 |
-| Attendee | Riya Bhandari | gauravkumarsony08+attendee@gmail.com | 9876543211 |
-| Speaker | Prof. Nandini Rautela | gauravkumarsony08+speaker@gmail.com | 9876543212 |
-| VIP | Dr. Vinod Tamta | gauravkumarsony08+vip@gmail.com | 9876543213 |
-| Organiser | Dr. Kavita Negi | gauravkumarsony08+organiser@gmail.com | 9876543214 |
-| Volunteer | Rohit Bisht | gauravkumarsony08+volunteer@gmail.com | 9876543215 |
+| Presenter | Aarav Mehra | presenter@gmail.com | 9876543210 |
+| Attendee | Riya Bhandari | attendee@gmail.com | 9876543211 |
+| Speaker | Prof. Nandini Rautela | speaker@gmail.com | 9876543212 |
+| VIP | Dr. Vinod Tamta | vip@gmail.com | 9876543213 |
+| Organiser | Dr. Kavita Negi | organizer@gmail.com | 9876543214 |
+| Volunteer | Rohit Bisht | volunteer@gmail.com | 9876543215 |
 
 ## Data — `tools/seed/seed_data.json`
 
@@ -123,3 +147,78 @@ This build is fine for screenshots and a closed/internal test track. It is **not
 6. **Play Store.** Upload keystore and release signing (release currently uses debug keys), a privacy policy, Data safety form (camera; personal data once real), camera permission disclosure, an organiser-owned application ID if required, target-SDK review, and confirmed official conference details (dates, venue, organiser).
 
 Store assets: `store_assets/play_icon_512.png` (full logo, 512×512) for the Play listing icon. The Play app name is limited to 30 characters, so use e.g. "CONE – USSTC Companion" as the title and put "Conference Operations & Networking Environment" in the short description.
+### In-app email verification testing
+
+The mobile app defaults to in-app testing verification. No email is sent in this
+mode, including when configuration is missing. The existing app signs in existing
+registrations; it does not create conference registrations.
+
+1. In the admin API environment, set `TEST_IN_APP_EMAIL_VERIFICATION=true` with a
+   non-production `APP_ENV`, and start the API using its existing Firebase Admin
+   credentials. Keep this testing server private.
+2. In `tools/seed`, run `node seed.mjs --verification-test-data --enable-email-link`
+   to populate the twelve test registrations and initially unverified Auth users.
+   Preview writes with `node seed.mjs --verification-test-data --dry-run`.
+3. Run the mobile app with
+   `flutter run --dart-define=TEST_VERIFICATION_API_URL=https://YOUR-TEST-API`.
+   Use a device-reachable HTTPS address without a trailing slash or `/api`.
+4. Enter the fixture's name, email and mobile, continue, then tap **Verify Email**.
+   The app displays a genuine Firebase link and consumes it internally. Firebase
+   verifies the Auth identity, and the API updates `people/{email}` with
+   `emailVerified: true` and `emailVerificationStatus: Verified`.
+
+Test accounts are in `tools/seed/verification_test_data.json`: three each of
+`participant1@participant.com`, `attendee1@attendee.com`,
+`volunteer1@volunteer.com`, and `organizer1@organizer.com` (numbers 1�3).
+Names follow `Test Participant 1` and the corresponding role/number. Exact mobile
+numbers and unique pass/coupon IDs are in the fixture. Participant uses the
+existing `presenter` role; Organizer uses `organiser`. Ordinary demo data remains
+separate. Re-seeding the test fixture resets verification to Pending.
+
+Restore email delivery with `--dart-define=IN_APP_EMAIL_VERIFICATION=false` and
+unset the server testing flag. The testing endpoint refuses production mode.
+Firestore rules and other email features remain unchanged. This flow intentionally
+substitutes registration details for proof of inbox ownership during testing.
+
+### Updating existing sample-account emails
+
+The six sample accounts now use `presenter@gmail.com`, `attendee@gmail.com`,
+`speaker@gmail.com`, `vip@gmail.com`, `organizer@gmail.com`, and
+`volunteer@gmail.com`; names and mobile numbers in the table above are unchanged.
+The live Firebase migration was applied and verified. Existing Auth UIDs,
+registration/pass/coupon IDs and non-email record fields were preserved, and
+coupon-owner email references were updated.
+
+For another database with the original accounts, preview with
+`node tools/seed/migrate_role_emails.mjs`, then apply with `--apply`. The migration
+checks for destination conflicts, creates a local recovery snapshot, updates
+existing Auth users, and transactionally moves the email-keyed Firestore records.
+It does not create users or send email. Prefer this migration over re-seeding
+existing accounts. The original addresses remain only in its migration mapping.
+
+`node tools/seed/verify_role_logins.mjs` checks real Firebase email-link sign-in
+and authenticated Firestore access for all six sample accounts. It generates and
+consumes links internally without mail delivery and does not print session tokens.
+
+
+### Temporary automatic Continue (current testing flow)
+
+`AUTO_VERIFY_EMAIL=true` is the default while in-app testing authentication is
+active. Continue validates the existing name/email/mobile record, automatically
+sets Firebase Auth and database email status to Verified, signs in with a Firebase
+custom token, and opens the existing selfie/dashboard step. No links or OTPs are
+generated or sent, and the verification screen is skipped for all roles.
+
+The API still requires `APP_ENV=test` (or `development`) and
+`TEST_IN_APP_EMAIL_VERIFICATION=true`. Custom-token sign-in requires a signing
+service-account credential; user ADC additionally needs an explicit
+`FIREBASE_SERVICE_ACCOUNT_ID` and existing `iam.serviceAccounts.signBlob`
+permission on that account. No signing credentials belong in the APK.
+
+Build against a configured testing API:
+`flutter build apk --release --dart-define=TEST_VERIFICATION_API_URL=https://YOUR-TEST-API`.
+
+The old screen and email-link code remain intact but are bypassed. Restore the
+manual in-app Verify Email screen with `--dart-define=AUTO_VERIFY_EMAIL=false`.
+Restore original inbox-based sign-in with
+`--dart-define=IN_APP_EMAIL_VERIFICATION=false` and disable the server testing flag.

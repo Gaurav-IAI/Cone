@@ -1,3 +1,4 @@
+import 'package:usstc_conference/app/branding.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -19,6 +20,14 @@ import 'package:usstc_conference/screens/qr_pass_screen.dart';
 import 'package:usstc_conference/screens/selfie_screen.dart';
 
 import 'fakes.dart';
+import 'package:usstc_conference/auth/identity_matcher.dart';
+import 'package:usstc_conference/auth/participant_auth_service.dart';
+
+class BrandedRepository extends FakeRepository implements BrandingSource {
+  final changes = StreamController<AppBranding>.broadcast();
+  @override
+  Stream<AppBranding> watchBranding() => changes.stream;
+}
 
 class Harness {
   Harness(
@@ -44,13 +53,131 @@ class Harness {
   }
 }
 
-Future<Harness> pumpApp(WidgetTester tester) async {
+class TestingAuth extends FakeAuthService implements InAppVerification {
+  TestingAuth(super.repository);
+  @override
+  bool get testingVerificationEnabled => true;
+  @override
+  Uri? get testingVerificationLink => FakeAuthService.sampleLink;
+}
+
+class AutomaticTestingAuth extends TestingAuth
+    implements AutomaticEmailVerification {
+  AutomaticTestingAuth(super.repository);
+  @override
+  bool get automaticEmailVerificationEnabled => true;
+  @override
+  Future<SignInState> continueWithoutVerification(LoginDetails details) async {
+    final person = await repository.person(details.email);
+    if (person == null ||
+        !IdentityMatcher.matches(
+          typedName: details.name,
+          typedEmail: details.email,
+          typedMobile: details.mobile,
+          recordName: person.fullName,
+          recordEmail: person.email,
+          recordMobile: person.mobile,
+        )) {
+      return const SignInFailed(
+        'The details do not match an existing registration.',
+      );
+    }
+    return SignedIn(person);
+  }
+}
+
+class OtpTestingAuth extends FakeAuthService implements EmailOtpAuthentication {
+  OtpTestingAuth(super.repository);
+  int requests = 0;
+  @override
+  bool get emailOtpEnabled => true;
+  @override
+  Future<EmailOtpChallenge> requestEmailOtp(
+    LoginDetails details, {
+    bool resend = false,
+  }) async {
+    // Like the API: details are checked against the registration before a
+    // code is issued.
+    final person = await repository.person(details.email);
+    if (person == null ||
+        !IdentityMatcher.matches(
+          typedName: details.name,
+          typedEmail: details.email,
+          typedMobile: details.mobile,
+          recordName: person.fullName,
+          recordEmail: person.email,
+          recordMobile: person.mobile,
+        )) {
+      throw const AuthFailure('User data not found in system.');
+    }
+    requests++;
+    return EmailOtpChallenge('challenge-$requests');
+  }
+
+  @override
+  Future<SignInState> verifyEmailOtp(
+    LoginDetails details,
+    EmailOtpChallenge challenge,
+    String code,
+  ) async {
+    if (code != '123456') throw const AuthFailure('Invalid or expired code.');
+    return SignedIn((await repository.person(details.email))!);
+  }
+}
+
+/// Mirrors the testing APK: bundled demo accounts continue without email,
+/// every other registration signs in with an emailed code.
+class MixedTestingAuth extends AutomaticTestingAuth
+    implements EmailOtpAuthentication, DemoAccountLookup {
+  MixedTestingAuth(super.repository, this.demoEmails);
+  final Set<String> demoEmails;
+  int requests = 0;
+  @override
+  Future<bool> isDemoAccount(String email) async => demoEmails.contains(email);
+  @override
+  bool get emailOtpEnabled => true;
+  @override
+  Future<EmailOtpChallenge> requestEmailOtp(
+    LoginDetails details, {
+    bool resend = false,
+  }) async {
+    requests++;
+    return EmailOtpChallenge('challenge-$requests');
+  }
+
+  @override
+  Future<SignInState> verifyEmailOtp(
+    LoginDetails details,
+    EmailOtpChallenge challenge,
+    String code,
+  ) async {
+    if (code != '123456') throw const AuthFailure('Invalid or expired code.');
+    return SignedIn((await repository.person(details.email))!);
+  }
+}
+
+Future<Harness> pumpApp(
+  WidgetTester tester, {
+  bool testing = false,
+  bool automatic = false,
+  Set<String>? demoEmails,
+  bool otpLogin = false,
+  FakeRepository? repository,
+}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.75;
   addTearDown(tester.view.reset);
-  final repo = FakeRepository();
+  final repo = repository ?? FakeRepository();
   final session = AppSession();
-  final auth = FakeAuthService(repo);
+  final auth = otpLogin
+      ? OtpTestingAuth(repo)
+      : demoEmails != null
+      ? MixedTestingAuth(repo, demoEmails)
+      : automatic
+      ? AutomaticTestingAuth(repo)
+      : testing
+      ? TestingAuth(repo)
+      : FakeAuthService(repo);
   final coupons = FakeCouponService(repo);
   final selfies = MemorySelfieStore();
   final links = StreamController<Uri>.broadcast();
@@ -145,11 +272,193 @@ Color screenBackground(WidgetTester tester) => Theme.of(
 ).scaffoldBackgroundColor;
 
 void main() {
+  testWidgets(
+    'public branding updates login, dashboard and browser title without a new login',
+    (tester) async {
+      final repo = BrandedRepository();
+      addTearDown(repo.changes.close);
+      final h = await pumpApp(tester, automatic: true, repository: repo);
+      repo.changes.add(const AppBranding(applicationName: 'Aurora Congress'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
+        'Aurora Congress',
+      );
+      expect(find.textContaining('Aurora Congress'), findsWidgets);
+      await fillLogin(tester, h.repo.byRole(Role.attendee));
+      await tapKey(tester, 'skipSelfie');
+      expect(find.text('Aurora Congress'), findsOneWidget);
+      repo.changes.add(const AppBranding(applicationName: 'Summit Congress'));
+      await tester.pumpAndSettle();
+      expect(find.text('Summit Congress'), findsOneWidget);
+      expect(find.text('Aurora Congress'), findsNothing);
+      expect(h.session.person?.role, Role.attendee);
+    },
+  );
+
+  for (final role in Role.values) {
+    testWidgets('${role.name}: OTP verification precedes role navigation', (
+      tester,
+    ) async {
+      final h = await pumpApp(tester, otpLogin: true);
+      final person = h.repo.byRole(role);
+      await fillLogin(tester, person);
+      expect(h.session.person, isNull);
+      expect(find.byKey(const Key('emailOtpField')), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('emailOtpField')), '123456');
+      await tapKey(tester, 'verifyEmailOtp');
+      expect(h.session.person?.email, person.email);
+      expect(h.auth.sent, isEmpty);
+      await tapKey(tester, 'skipSelfie');
+      expect(find.byType(DashboardScreen), findsOneWidget);
+      expect(find.byKey(Key('roleBadge-${role.name}')), findsOneWidget);
+    });
+  }
+  testWidgets('OTP resend respects countdown and clears the old code', (
+    tester,
+  ) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee));
+    final button = tester.widget<OutlinedButton>(
+      find.byKey(const Key('resendLink')),
+    );
+    expect(button.onPressed, isNull);
+    await tester.enterText(find.byKey(const Key('emailOtpField')), '999999');
+    await tester.pump(const Duration(seconds: 61));
+    await tapKey(tester, 'resendLink');
+    expect((h.auth as OtpTestingAuth).requests, 2);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('emailOtpField')))
+          .controller!
+          .text,
+      isEmpty,
+    );
+    expect(h.session.person, isNull);
+  });
+  testWidgets('unknown details show not-found and request no code', (
+    tester,
+  ) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee), mobile: '9000000000');
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(CheckEmailScreen), findsNothing);
+    expect(find.byKey(const Key('loginError')), findsOneWidget);
+    expect(find.text('User data not found in system.'), findsOneWidget);
+    expect((h.auth as OtpTestingAuth).requests, 0);
+    expect(h.session.person, isNull);
+  });
+  testWidgets('OTP screen confirms the code was sent', (tester) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee));
+    expect(find.textContaining('We sent a six-digit code'), findsOneWidget);
+    expect(find.textContaining('If your details match'), findsNothing);
+  });
+  testWidgets('wrong OTP cannot open a dashboard', (tester) async {
+    final h = await pumpApp(tester, otpLogin: true);
+    await fillLogin(tester, h.repo.byRole(Role.attendee));
+    await tester.enterText(find.byKey(const Key('emailOtpField')), '000000');
+    await tapKey(tester, 'verifyEmailOtp');
+    expect(h.session.person, isNull);
+    expect(find.text('Invalid or expired code.'), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
+  });
+
+  testWidgets('login has only three identity fields and no password', (
+    tester,
+  ) async {
+    await pumpApp(tester, demoEmails: {});
+    expect(find.byType(TextFormField), findsNWidgets(3));
+    expect(find.byKey(const Key('passwordField')), findsNothing);
+    expect(find.textContaining('assword'), findsNothing);
+  });
+  testWidgets('demo accounts continue without an email code', (tester) async {
+    final repo = FakeRepository();
+    final demo = repo.byRole(Role.attendee);
+    final h = await pumpApp(tester, repository: repo, demoEmails: {demo.email});
+    await fillLogin(tester, demo);
+    expect((h.auth as MixedTestingAuth).requests, 0);
+    expect(find.byKey(const Key('emailOtpField')), findsNothing);
+    expect(h.session.person?.email, demo.email);
+    expect(find.byType(SelfieScreen), findsOneWidget);
+  });
+  testWidgets('other registrations must enter the emailed code', (
+    tester,
+  ) async {
+    final repo = FakeRepository();
+    final person = repo.byRole(Role.presenter);
+    final h = await pumpApp(
+      tester,
+      repository: repo,
+      demoEmails: {repo.byRole(Role.attendee).email},
+    );
+    await fillLogin(tester, person);
+    expect((h.auth as MixedTestingAuth).requests, 1);
+    expect(h.session.person, isNull);
+    await tester.enterText(find.byKey(const Key('emailOtpField')), '000000');
+    await tapKey(tester, 'verifyEmailOtp');
+    expect(h.session.person, isNull);
+    await tester.enterText(find.byKey(const Key('emailOtpField')), '123456');
+    await tapKey(tester, 'verifyEmailOtp');
+    expect(h.session.person?.email, person.email);
+    expect(find.byType(SelfieScreen), findsOneWidget);
+  });
+  for (final role in Role.values) {
+    testWidgets(
+      '${role.name}: Continue skips all verification and opens the next step',
+      (tester) async {
+        final h = await pumpApp(tester, automatic: true);
+        final person = h.repo.byRole(role);
+        await fillLogin(tester, person);
+        expect(h.auth.sent, isEmpty);
+        expect(find.byType(CheckEmailScreen), findsNothing);
+        expect(find.byKey(const Key('verifyEmail')), findsNothing);
+        expect(find.byKey(const Key('verificationLink')), findsNothing);
+        expect(h.session.person?.email, person.email);
+        expect(find.byType(SelfieScreen), findsOneWidget);
+        await tapKey(tester, 'skipSelfie');
+        expect(find.byType(DashboardScreen), findsOneWidget);
+        expect(find.byKey(Key('roleBadge-${role.name}')), findsOneWidget);
+      },
+    );
+  }
+  testWidgets('automatic Continue rejects mismatched registration details', (
+    tester,
+  ) async {
+    final h = await pumpApp(tester, automatic: true);
+    await fillLogin(
+      tester,
+      h.repo.byRole(Role.presenter),
+      mobile: '9876543299',
+    );
+    expect(h.session.person, isNull);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byKey(const Key('loginError')), findsOneWidget);
+    expect(h.auth.sent, isEmpty);
+  });
+
+  for (final role in Role.values) {
+    testWidgets(
+      '${role.name}: in-app verification without an incoming email link',
+      (tester) async {
+        final h = await pumpApp(tester, testing: true);
+        final person = h.repo.byRole(role);
+        await fillLogin(tester, person);
+        expect(find.textContaining('no email was sent'), findsOneWidget);
+        expect(find.byKey(const Key('verificationLink')), findsOneWidget);
+        expect(find.textContaining('Open the email'), findsNothing);
+        await tapKey(tester, 'verifyEmail');
+        expect(h.session.person?.email, person.email);
+        expect(find.byType(SelfieScreen), findsOneWidget);
+      },
+    );
+  }
+
   testWidgets('login is one form for every role, with no sign-up', (
     tester,
   ) async {
     await pumpApp(tester);
-    expect(find.text('Participant sign-in'), findsOneWidget);
+    expect(find.text('Conference sign-in'), findsOneWidget);
     expect(
       find.text('CONE · Conference Operations & Networking Environment'),
       findsOneWidget,

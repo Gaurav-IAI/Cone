@@ -131,7 +131,7 @@ class QrPassScreen extends StatelessWidget {
                         horizontal: 12,
                       ),
                       child: Text(
-                        '${p.role.label.toUpperCase()} · CONE · $coneFullName',
+                        '${p.role.label.toUpperCase()} \u00b7 ${appName(context)} \u00b7 $coneFullName',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
