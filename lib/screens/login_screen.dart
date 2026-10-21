@@ -5,6 +5,7 @@ import '../app/app_scope.dart';
 import '../app/theme.dart';
 import '../auth/identity_matcher.dart';
 import '../auth/participant_auth_service.dart';
+import '../data/models.dart';
 import '../widgets/common.dart';
 import 'check_email_screen.dart';
 import 'dashboard_screen.dart';
@@ -47,6 +48,15 @@ class _LoginScreenState extends State<LoginScreen> {
     );
     setState(() => _submitting = true);
     try {
+      // Accounts marked "Test account" in the dashboard skip the emailed code.
+      if (auth is TestAccountLogin) {
+        final result = await (auth as TestAccountLogin).signInTestAccount(
+          details,
+        );
+        if (!mounted) return;
+        if (result is SignInFailed) throw AuthFailure(result.message);
+        if (result is SignedIn) return await _openHome(result.person);
+      }
       // The six bundled demo accounts continue without email; everyone else
       // receives a one-time code at their registered email address.
       final demo =
@@ -78,19 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
             result is SignInFailed ? result.message : 'Sign-in failed.',
           );
         }
-        final scope = AppScope.of(context);
-        final selfie = await scope.selfies.load(result.person.email);
-        if (!mounted) return;
-        scope.session.signIn(result.person, selfie: selfie);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute<void>(
-            builder: (_) => selfie == null
-                ? SelfieScreen(person: result.person)
-                : DashboardScreen(person: result.person),
-          ),
-          (_) => false,
-        );
-        return;
+        return await _openHome(result.person);
       }
       // Original manual email verification is temporarily bypassed above.
       // Set AUTO_VERIFY_EMAIL=false to restore it.
@@ -110,6 +108,22 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute<void>(
         builder: (_) => CheckEmailScreen(details: details),
       ),
+    );
+  }
+
+  /// The selfie step, or the dashboard if a selfie is already on this phone.
+  Future<void> _openHome(Person person) async {
+    final scope = AppScope.of(context);
+    final selfie = await scope.selfies.load(person.email);
+    if (!mounted) return;
+    scope.session.signIn(person, selfie: selfie);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => selfie == null
+            ? SelfieScreen(person: person)
+            : DashboardScreen(person: person),
+      ),
+      (_) => false,
     );
   }
 

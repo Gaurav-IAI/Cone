@@ -125,6 +125,18 @@ class OtpTestingAuth extends FakeAuthService implements EmailOtpAuthentication {
   }
 }
 
+/// Like the API: only accounts marked "Test account" skip the emailed code.
+class TestAccountAuth extends OtpTestingAuth implements TestAccountLogin {
+  TestAccountAuth(super.repository, this.testEmails);
+  final Set<String> testEmails;
+  @override
+  Future<SignInState?> signInTestAccount(LoginDetails details) async {
+    final person = await repository.person(details.email);
+    if (person == null || !testEmails.contains(person.email)) return null;
+    return SignedIn(person);
+  }
+}
+
 /// Mirrors the testing APK: bundled demo accounts continue without email,
 /// every other registration signs in with an emailed code.
 class MixedTestingAuth extends AutomaticTestingAuth
@@ -161,6 +173,7 @@ Future<Harness> pumpApp(
   bool testing = false,
   bool automatic = false,
   Set<String>? demoEmails,
+  Set<String>? testEmails,
   bool otpLogin = false,
   FakeRepository? repository,
 }) async {
@@ -169,7 +182,9 @@ Future<Harness> pumpApp(
   addTearDown(tester.view.reset);
   final repo = repository ?? FakeRepository();
   final session = AppSession();
-  final auth = otpLogin
+  final auth = testEmails != null
+      ? TestAccountAuth(repo, testEmails)
+      : otpLogin
       ? OtpTestingAuth(repo)
       : demoEmails != null
       ? MixedTestingAuth(repo, demoEmails)
@@ -314,6 +329,38 @@ void main() {
       expect(find.byKey(Key('roleBadge-${role.name}')), findsOneWidget);
     });
   }
+  for (final role in Role.values) {
+    testWidgets('${role.name}: a test account skips OTP and opens the selfie', (
+      tester,
+    ) async {
+      final repo = FakeRepository();
+      final person = repo.byRole(role);
+      final h = await pumpApp(
+        tester,
+        repository: repo,
+        testEmails: {person.email},
+      );
+      await fillLogin(tester, person);
+      expect(find.byKey(const Key('emailOtpField')), findsNothing);
+      expect(find.byType(SelfieScreen), findsOneWidget);
+      expect(h.session.person?.email, person.email);
+      expect((h.auth as OtpTestingAuth).requests, 0);
+    });
+  }
+  testWidgets('accounts not marked as test still verify an emailed code', (
+    tester,
+  ) async {
+    final repo = FakeRepository();
+    final h = await pumpApp(
+      tester,
+      repository: repo,
+      testEmails: {repo.byRole(Role.presenter).email},
+    );
+    await fillLogin(tester, repo.byRole(Role.attendee));
+    expect(find.byKey(const Key('emailOtpField')), findsOneWidget);
+    expect(find.byType(SelfieScreen), findsNothing);
+    expect((h.auth as OtpTestingAuth).requests, 1);
+  });
   testWidgets('OTP resend respects countdown and clears the old code', (
     tester,
   ) async {

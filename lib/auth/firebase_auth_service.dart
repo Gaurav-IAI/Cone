@@ -23,7 +23,8 @@ class FirebaseAuthService
         AuthService,
         InAppVerification,
         AutomaticEmailVerification,
-        EmailOtpAuthentication {
+        EmailOtpAuthentication,
+        TestAccountLogin {
   FirebaseAuthService(this._repository, {FirebaseAuth? auth})
     : _auth = auth ?? FirebaseAuth.instance;
 
@@ -33,12 +34,17 @@ class FirebaseAuthService
   Future<Map<String, dynamic>> _otpRequest(
     String action,
     Map<String, dynamic> body,
+  ) => _authRequest('email-otp/$action', body);
+
+  Future<Map<String, dynamic>> _authRequest(
+    String path,
+    Map<String, dynamic> body,
   ) async {
     const base = AppConfig.authApiUrl;
     if (base.isEmpty) {
       throw const AuthFailure('Authentication server is not configured.');
     }
-    final uri = Uri.parse('$base/api/auth/email-otp/$action');
+    final uri = Uri.parse('$base/api/auth/$path');
     if (AppConfig.isProduction && uri.scheme != 'https') {
       throw const AuthFailure('Secure authentication requires HTTPS.');
     }
@@ -92,26 +98,7 @@ class FirebaseAuthService
         'challengeId': challenge.id,
         'code': code,
       });
-      await _auth.signInWithCustomToken(data['token'] as String);
-      final person = await _repository.person(
-        IdentityMatcher.normalizeEmail(details.email),
-      );
-      if (person == null ||
-          ['cancelled', 'suspended'].contains(person.registrationStatus) ||
-          !IdentityMatcher.matches(
-            typedName: details.name,
-            typedEmail: details.email,
-            typedMobile: details.mobile,
-            recordName: person.fullName,
-            recordEmail: person.email,
-            recordMobile: person.mobile,
-          )) {
-        await _auth.signOut();
-        return const SignInFailed(
-          'Your registration is unavailable. Contact the organizer.',
-        );
-      }
-      return SignedIn(person);
+      return await _signInWithToken(details, data['token'] as String);
     } on AuthFailure {
       rethrow;
     } catch (_) {
@@ -120,6 +107,55 @@ class FirebaseAuthService
         'Sign-in could not finish. Request a new code.',
       );
     }
+  }
+
+  @override
+  Future<SignInState?> signInTestAccount(LoginDetails details) async {
+    final Map<String, dynamic> data;
+    try {
+      data = await _authRequest('test-login', {
+        'name': details.name,
+        'email': details.email,
+        'mobile': details.mobile,
+        'audience': 'mobile',
+      });
+    } on AuthFailure {
+      return null; // Not a test account, or the server has them turned off.
+    }
+    try {
+      return await _signInWithToken(details, data['token'] as String);
+    } catch (_) {
+      await _auth.signOut();
+      return const SignInFailed('Sign-in could not finish. Please try again.');
+    }
+  }
+
+  /// Signs in with a token from the API, then checks the typed details
+  /// against the live registration.
+  Future<SignInState> _signInWithToken(
+    LoginDetails details,
+    String token,
+  ) async {
+    await _auth.signInWithCustomToken(token);
+    final person = await _repository.person(
+      IdentityMatcher.normalizeEmail(details.email),
+    );
+    if (person == null ||
+        ['cancelled', 'suspended'].contains(person.registrationStatus) ||
+        !IdentityMatcher.matches(
+          typedName: details.name,
+          typedEmail: details.email,
+          typedMobile: details.mobile,
+          recordName: person.fullName,
+          recordEmail: person.email,
+          recordMobile: person.mobile,
+        )) {
+      await _auth.signOut();
+      return const SignInFailed(
+        'Your registration is unavailable. Contact the organizer.',
+      );
+    }
+    return SignedIn(person);
   }
 
   @override
@@ -329,7 +365,7 @@ class FirebaseAuthService
         final result = await _auth.currentUser!.getIdTokenResult(true);
         final claims = result.claims ?? {};
         final verifiedAt = claims['otp_verified_at'];
-        if (claims['login_method'] != 'email_otp' ||
+        if (!['email_otp', 'test_account'].contains(claims['login_method']) ||
             claims['login_audience'] != 'mobile' ||
             verifiedAt is! num ||
             DateTime.now().millisecondsSinceEpoch ~/ 1000 - verifiedAt >

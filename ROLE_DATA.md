@@ -6,8 +6,12 @@ holds no credentials for real people: it signs in with an emailed OTP checked by
 the API, then reads the person's own `people/{email}` document. The role in that
 document decides which dashboard, colour and data the app shows.
 
-The six fixed demo accounts (`isDemo: true`, bundled `assets/testing/demo_login.json`)
-remain for demonstrations and skip OTP. Every other registration must use OTP.
+A registration with `accountType: "test"` skips OTP: `POST /api/auth/test-login`
+checks the name, email and mobile and returns the session token directly. A
+Super Admin turns this on or off per person in the dashboard (Participants →
+Edit → "Test account"), and the API's `ALLOW_TEST_ACCOUNT_LOGIN=false` turns it
+off for everyone. The six fixed demo accounts (`isDemo: true`) are marked this
+way. Every other registration must use OTP.
 
 ## Sign-in flow (mobile)
 

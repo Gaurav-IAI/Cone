@@ -81,6 +81,14 @@ abstract interface class DemoAccountLookup {
   Future<bool> isDemoAccount(String email);
 }
 
+/// Registrations a Super Admin marked as test accounts in the dashboard sign
+/// in without an emailed code.
+abstract interface class TestAccountLogin {
+  /// [SignedIn] for a test account, null when [details] are not one (the
+  /// caller then uses email OTP), or [SignInFailed] if sign-in broke.
+  Future<SignInState?> signInTestAccount(LoginDetails details);
+}
+
 class EmailOtpChallenge {
   const EmailOtpChallenge(this.id);
   final String id;

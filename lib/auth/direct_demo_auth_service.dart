@@ -16,6 +16,7 @@ class DirectDemoAuthService
         AuthService,
         AutomaticEmailVerification,
         EmailOtpAuthentication,
+        TestAccountLogin,
         DemoAccountLookup {
   DirectDemoAuthService(this._repository, {FirebaseAuth? auth})
     : _auth = auth ?? FirebaseAuth.instance;
@@ -58,6 +59,10 @@ class DirectDemoAuthService
     EmailOtpChallenge challenge,
     String code,
   ) => _otp.verifyEmailOtp(details, challenge, code);
+
+  @override
+  Future<SignInState?> signInTestAccount(LoginDetails details) =>
+      _otp.signInTestAccount(details);
 
   @override
   bool get automaticEmailVerificationEnabled => true;
